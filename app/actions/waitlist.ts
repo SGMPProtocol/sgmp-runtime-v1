@@ -11,8 +11,8 @@ export async function submitWaitlist(formData: FormData) {
   const role = formData.get("role") as string;
   const message = formData.get("message") as string;
 
-  if (!name || !email) {
-    return { success: false, error: "Name and email are required" };
+  if (!name || !email || !role) {
+    return { success: false, error: "Name, email, and role are required" };
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -27,8 +27,10 @@ export async function submitWaitlist(formData: FormData) {
       {
         name,
         email,
-        role: role || null,
+        role,
         message: message || null,
+        source: "website",
+        status: "pending",
       },
     ]);
 

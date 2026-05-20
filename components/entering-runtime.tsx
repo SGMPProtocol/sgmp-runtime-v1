@@ -95,12 +95,27 @@ export function EnteringRuntime() {
                 className="w-full px-5 py-4 rounded-lg bg-[hsl(var(--card))] border border-[hsl(var(--border))] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:border-[hsl(var(--accent))] transition-colors"
               />
             </div>
-            <input
-              type="text"
+            <select
               name="role"
-              placeholder="Role (e.g., Artist, Developer, Investor)"
-              className="w-full px-5 py-4 rounded-lg bg-[hsl(var(--card))] border border-[hsl(var(--border))] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:border-[hsl(var(--accent))] transition-colors"
-            />
+              required
+              defaultValue=""
+              className="w-full px-5 py-4 rounded-lg bg-[hsl(var(--card))] border border-[hsl(var(--border))] text-[hsl(var(--foreground))] focus:outline-none focus:border-[hsl(var(--accent))] transition-colors appearance-none cursor-pointer"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "right 1rem center",
+                backgroundSize: "1.25rem",
+              }}
+            >
+              <option value="" disabled className="text-[hsl(var(--muted-foreground))]">
+                Select Role
+              </option>
+              <option value="Artist">Artist</option>
+              <option value="Producer">Producer</option>
+              <option value="Investor">Investor</option>
+              <option value="Partner">Partner</option>
+              <option value="Other">Other</option>
+            </select>
             <textarea
               name="message"
               placeholder="Message (optional)"
