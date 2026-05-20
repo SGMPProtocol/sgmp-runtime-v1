@@ -54,7 +54,13 @@ export function RuntimeChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string>(LOCAL_SESSION_ID);
   const [isConnected, setIsConnected] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Enable interaction immediately on mount
+  useEffect(() => {
+    setIsReady(true);
+  }, []);
 
   useEffect(() => {
     async function initSession() {
@@ -92,8 +98,10 @@ export function RuntimeChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const canSend = isReady && input.trim().length > 0 && !isLoading;
+
   async function handleSend() {
-    if (!input.trim() || isLoading) return;
+    if (!canSend) return;
 
     const userMessage = input.trim();
     setInput("");
@@ -152,10 +160,10 @@ export function RuntimeChat() {
         </div>
         <div className="flex items-center gap-2">
           <span
-            className={`w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)] ${isLoading ? "animate-pulse" : ""}`}
+            className={`w-2 h-2 rounded-full ${isReady ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" : "bg-amber-500"} ${isLoading ? "animate-pulse" : ""}`}
           />
           <span className="text-xs text-[hsl(var(--muted-foreground))]">
-            {isLoading ? "Thinking..." : isConnected ? "Connected" : "Local Mode"}
+            {!isReady ? "Initializing..." : isLoading ? "Thinking..." : isConnected ? "Connected" : "Local Mode"}
           </span>
         </div>
       </div>
@@ -213,16 +221,17 @@ export function RuntimeChat() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Mesaj yaz..."
-              disabled={isLoading}
+              placeholder={isReady ? "Mesaj yaz..." : "Yükleniyor..."}
+              disabled={!isReady || isLoading}
               className="w-full px-4 py-3 rounded-xl bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:border-[hsl(var(--accent))] focus:shadow-[0_0_0_2px_rgba(59,130,246,0.1)] transition-all disabled:opacity-50"
             />
             {/* Glow effect when focused */}
             <div className="absolute inset-0 rounded-xl bg-[hsl(var(--accent))] opacity-0 blur-xl transition-opacity pointer-events-none peer-focus:opacity-10" />
           </div>
           <button
+            type="button"
             onClick={handleSend}
-            disabled={!input.trim() || isLoading}
+            disabled={!canSend}
             className="px-5 py-3 rounded-xl bg-[hsl(var(--accent))] text-white font-medium text-sm hover:bg-[hsl(220,70%,50%)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--accent))] focus:ring-offset-2 focus:ring-offset-[hsl(var(--card))] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_20px_rgba(59,130,246,0.2)] hover:shadow-[0_0_30px_rgba(59,130,246,0.3)]"
           >
             <svg
