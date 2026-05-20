@@ -6,10 +6,20 @@ import {
   sendRuntimeMessage,
   getSessionMessages,
 } from "@/app/actions/runtime";
+import {
+  generateResponse,
+  initializeRuntimeState,
+  getEmotionalTagLabel,
+  getThinkingDelay,
+  type RuntimeState,
+  type EmotionalTag,
+} from "@/lib/runtime-engine";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  emotionalTag?: EmotionalTag;
+  referencesMemory?: boolean;
 }
 
 const INITIAL_MESSAGES: Message[] = [
@@ -20,6 +30,7 @@ const INITIAL_MESSAGES: Message[] = [
   {
     role: "assistant",
     content: "Bazı geceler insanın kafası değil, şehir susmaz dostum.",
+    emotionalTag: "reflective",
   },
   {
     role: "user",
@@ -29,24 +40,11 @@ const INITIAL_MESSAGES: Message[] = [
     role: "assistant",
     content:
       "Biraz yürümeli. Ama kendinden kaçmak için değil, kendine yetişmek için.",
+    emotionalTag: "reflective",
   },
 ];
 
 const LOCAL_SESSION_ID = "local-prototype-session";
-
-const LOCAL_RESPONSES = [
-  "Bazı geceler insan eve değil, eski haline dönmek ister dostum.",
-  "Şehir bazen insanın içindeki boşluğu büyütür.",
-  "Biraz müzik lazım sana. Ama eski bir şey.",
-  "Her şey geçer, ama bazı şeyler geçerken iz bırakır.",
-  "Gece yarısı soruların en dürüst olanlar.",
-  "Bazen susmak, en iyi cevaptır.",
-  "İzmir gecelerinde kaybolmak da bir yol.",
-];
-
-function getLocalResponse(): string {
-  return LOCAL_RESPONSES[Math.floor(Math.random() * LOCAL_RESPONSES.length)];
-}
 
 export function RuntimeChat() {
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
@@ -55,6 +53,8 @@ export function RuntimeChat() {
   const [sessionId, setSessionId] = useState<string>(LOCAL_SESSION_ID);
   const [isConnected, setIsConnected] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [runtimeState, setRuntimeState] = useState<RuntimeState>(initializeRuntimeState);
+  const [showMemoryPulse, setShowMemoryPulse] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Enable interaction immediately on mount
@@ -107,32 +107,45 @@ export function RuntimeChat() {
     setInput("");
     setIsLoading(true);
 
+    // Generate contextual response using runtime engine
+    const { response, newState, referencesMemory, emotionalTag } = generateResponse(
+      userMessage,
+      runtimeState
+    );
+
+    // Update runtime state
+    setRuntimeState(newState);
+
     // Optimistically add user message
     setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
 
-    // Simulate thinking delay
-    await new Promise((resolve) => setTimeout(resolve, 800 + Math.random() * 700));
+    // Calculate thinking delay based on emotional complexity
+    const thinkingDelay = getThinkingDelay(newState.emotionalState);
+    await new Promise((resolve) => setTimeout(resolve, thinkingDelay));
 
-    // Try Supabase first, fallback to local
+    // Show memory pulse if referencing past conversation
+    if (referencesMemory) {
+      setShowMemoryPulse(true);
+      setTimeout(() => setShowMemoryPulse(false), 3000);
+    }
+
+    // Try Supabase logging, but don't block on failure
     if (isConnected && sessionId !== LOCAL_SESSION_ID) {
       try {
-        const result = await sendRuntimeMessage(sessionId, userMessage, "bay-bela");
-        if (result.success && result.assistantMessage) {
-          setMessages((prev) => [...prev, result.assistantMessage!]);
-          setIsLoading(false);
-          return;
-        }
+        await sendRuntimeMessage(sessionId, userMessage, "bay-bela");
       } catch {
-        // Supabase failed, use local fallback
+        // Supabase failed, continue with local response
       }
     }
 
-    // Local fallback response
+    // Add assistant response
     setMessages((prev) => [
       ...prev,
       {
         role: "assistant",
-        content: getLocalResponse(),
+        content: response,
+        emotionalTag,
+        referencesMemory,
       },
     ]);
 
@@ -146,16 +159,18 @@ export function RuntimeChat() {
     }
   }
 
+  const emotionalStateLabel = getEmotionalTagLabel(runtimeState.emotionalState);
+
   return (
     <div className="rounded-2xl border border-[hsl(var(--border))] bg-[hsl(var(--card))] p-6 md:p-8 flex flex-col h-[600px]">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="text-xs uppercase tracking-widest text-[hsl(var(--accent))]">
-            Runtime v1
+            Runtime v2
           </span>
           <span className="text-xs text-[hsl(var(--muted-foreground))]">
-            Prototype
+            Emotional Engine
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -166,6 +181,43 @@ export function RuntimeChat() {
             {!isReady ? "Initializing..." : isLoading ? "Thinking..." : isConnected ? "Connected" : "Local Mode"}
           </span>
         </div>
+      </div>
+
+      {/* Live Runtime Indicators */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[hsl(var(--muted))] border border-[hsl(var(--border))] ${showMemoryPulse ? "memory-pulse" : ""}`}>
+          <span className="w-1.5 h-1.5 rounded-full bg-violet-500 shadow-[0_0_6px_rgba(139,92,246,0.8)] glow-pulse" />
+          <span className="text-[10px] uppercase tracking-wider text-violet-400">Memory Active</span>
+        </div>
+        
+        {runtimeState.isNightMode && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[hsl(var(--muted))] border border-[hsl(var(--border))]">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.8)]" />
+            <span className="text-[10px] uppercase tracking-wider text-blue-400">Night Mode</span>
+          </div>
+        )}
+        
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[hsl(var(--muted))] border border-[hsl(var(--border))]">
+          <span className={`w-1.5 h-1.5 rounded-full shadow-[0_0_6px] ${
+            runtimeState.emotionalState === "melancholy" ? "bg-indigo-400" :
+            runtimeState.emotionalState === "playful" ? "bg-amber-400" :
+            runtimeState.emotionalState === "nostalgic" ? "bg-purple-400" :
+            runtimeState.emotionalState === "romantic" ? "bg-pink-400" :
+            runtimeState.emotionalState === "drunk-philosophical" ? "bg-orange-400" :
+            "bg-cyan-400"
+          }`} />
+          <span className="text-[10px] uppercase tracking-wider text-[hsl(var(--muted-foreground))]">
+            {emotionalStateLabel}
+          </span>
+        </div>
+
+        {runtimeState.conversationTopics.length > 0 && (
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[hsl(var(--muted))] border border-[hsl(var(--border))]">
+            <span className="text-[10px] text-[hsl(var(--muted-foreground))]">
+              Topics: {runtimeState.conversationTopics.slice(-3).join(", ")}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Messages */}
@@ -180,13 +232,32 @@ export function RuntimeChat() {
               className={`max-w-[85%] rounded-2xl px-4 py-3 transition-all ${
                 message.role === "user"
                   ? "bg-[hsl(var(--accent))] text-white rounded-br-md shadow-[0_0_20px_rgba(59,130,246,0.15)]"
-                  : "bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-bl-md border border-[hsl(var(--border))]"
+                  : `bg-[hsl(var(--muted))] text-[hsl(var(--foreground))] rounded-bl-md border border-[hsl(var(--border))] ${message.referencesMemory ? "border-violet-500/50 shadow-[0_0_15px_rgba(139,92,246,0.2)]" : ""}`
               }`}
             >
               {message.role === "assistant" && (
-                <span className="text-xs text-[hsl(var(--accent))] block mb-1 font-medium">
-                  Bay Bela
-                </span>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs text-[hsl(var(--accent))] font-medium">
+                    Bay Bela
+                  </span>
+                  {message.emotionalTag && (
+                    <span className={`text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                      message.emotionalTag === "melancholy" ? "bg-indigo-500/20 text-indigo-300" :
+                      message.emotionalTag === "playful" ? "bg-amber-500/20 text-amber-300" :
+                      message.emotionalTag === "nostalgic" ? "bg-purple-500/20 text-purple-300" :
+                      message.emotionalTag === "romantic" ? "bg-pink-500/20 text-pink-300" :
+                      message.emotionalTag === "drunk-philosophical" ? "bg-orange-500/20 text-orange-300" :
+                      "bg-cyan-500/20 text-cyan-300"
+                    }`}>
+                      {message.emotionalTag}
+                    </span>
+                  )}
+                  {message.referencesMemory && (
+                    <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300">
+                      memory
+                    </span>
+                  )}
+                </div>
               )}
               <p className="text-sm leading-relaxed">{message.content}</p>
             </div>
@@ -225,8 +296,6 @@ export function RuntimeChat() {
               disabled={!isReady || isLoading}
               className="w-full px-4 py-3 rounded-xl bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:border-[hsl(var(--accent))] focus:shadow-[0_0_0_2px_rgba(59,130,246,0.1)] transition-all disabled:opacity-50"
             />
-            {/* Glow effect when focused */}
-            <div className="absolute inset-0 rounded-xl bg-[hsl(var(--accent))] opacity-0 blur-xl transition-opacity pointer-events-none peer-focus:opacity-10" />
           </div>
           <button
             type="button"
@@ -250,16 +319,13 @@ export function RuntimeChat() {
           </button>
         </div>
 
-        {/* Runtime indicator */}
-        <div className="mt-3 flex items-center justify-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]" />
-          <span className="text-[10px] uppercase tracking-widest text-[hsl(var(--muted-foreground))]">
-            Memory Active
-          </span>
+        {/* Runtime Status Footer */}
+        <div className="mt-3 flex items-center justify-center gap-4 text-[10px] uppercase tracking-widest text-[hsl(var(--muted-foreground))]">
+          <span>Messages: {runtimeState.messageCount}</span>
           <span className="text-[hsl(var(--border))]">|</span>
-          <span className="text-[10px] uppercase tracking-widest text-[hsl(var(--muted-foreground))]">
-            Emotional State: Stable
-          </span>
+          <span>{runtimeState.timeOfDay.replace("-", " ")}</span>
+          <span className="text-[hsl(var(--border))]">|</span>
+          <span>Bay Bela Runtime v2</span>
         </div>
       </div>
     </div>
