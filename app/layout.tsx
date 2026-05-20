@@ -13,16 +13,41 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "SGMP | Soul Groove Memory Protocol",
+  title: "SGMP — Soul Groove Memory Protocol",
   description:
-    "Autonomous Music Intelligence Platform. AI-native artist systems that evolve through memory, emotion, audience behavior and time.",
+    "Autonomous Music Intelligence Platform for AI-native artist systems that evolve through memory, emotion, audience behavior and time.",
   keywords: [
     "AI",
     "Music",
     "Autonomous Artists",
     "Machine Learning",
     "Music Intelligence",
+    "SGMP",
+    "Soul Groove Memory Protocol",
   ],
+  metadataBase: new URL("https://sgmp.tr"),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "SGMP — Soul Groove Memory Protocol",
+    description:
+      "Autonomous Music Intelligence Platform for AI-native artist systems that evolve through memory, emotion, audience behavior and time.",
+    url: "https://sgmp.tr",
+    siteName: "SGMP",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SGMP — Soul Groove Memory Protocol",
+    description:
+      "Autonomous Music Intelligence Platform for AI-native artist systems that evolve through memory, emotion, audience behavior and time.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export const viewport: Viewport = {
