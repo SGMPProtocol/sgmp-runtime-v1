@@ -77,6 +77,7 @@ export function RuntimeChat() {
             messagesResult.messages &&
             messagesResult.messages.length > 0
           ) {
+            console.log("[v0] LOADED_FROM_SUPABASE:", JSON.stringify(messagesResult.messages.map((m: { content: string }) => m.content)));
             const loadedMessages = messagesResult.messages.map(
               (msg: { role: "user" | "assistant"; content: string }) => ({
                 role: msg.role,
@@ -103,27 +104,37 @@ export function RuntimeChat() {
   async function handleSend() {
     if (!canSend) return;
 
-    // Preserve the EXACT user input - no trimming, no normalization, no transformation
-    const rawUserMessage = input;
-    const userMessageForDisplay = rawUserMessage;
+    // Capture the EXACT raw input immediately - this is the source of truth
+    const rawInput = input;
     
+    // Debug logging to trace the exact value
+    console.log("[v0] RAW_USER_INPUT:", JSON.stringify(rawInput));
+    
+    // Clear input AFTER capturing
     setInput("");
     setIsLoading(true);
 
-    // Use a copy for topic detection only - never modify the original
-    const messageForAnalysis = rawUserMessage.toLowerCase();
-
-    // Generate contextual response using runtime engine (pass original for analysis)
+    // Generate response using runtime engine
+    // NOTE: generateResponse only reads the message for keyword detection
+    // It NEVER modifies or returns a modified version of the user message
     const { response, newState, referencesMemory, emotionalTag } = generateResponse(
-      rawUserMessage,
+      rawInput,
       runtimeState
     );
 
     // Update runtime state
     setRuntimeState(newState);
 
-    // Add user message with EXACT original content
-    setMessages((prev) => [...prev, { role: "user", content: userMessageForDisplay }]);
+    // Create the user message object with EXACT raw input
+    const userMessageObject: Message = { 
+      role: "user", 
+      content: rawInput // Use rawInput directly, no intermediate variables
+    };
+    
+    console.log("[v0] DISPLAYED_USER_MESSAGE:", JSON.stringify(userMessageObject.content));
+
+    // Add user message to state
+    setMessages((prev) => [...prev, userMessageObject]);
 
     // Calculate thinking delay based on emotional complexity
     const thinkingDelay = getThinkingDelay(newState.emotionalState);
@@ -138,7 +149,8 @@ export function RuntimeChat() {
     // Try Supabase logging with EXACT raw message, but don't block on failure
     if (isConnected && sessionId !== LOCAL_SESSION_ID) {
       try {
-        await sendRuntimeMessage(sessionId, rawUserMessage, "bay-bela");
+        console.log("[v0] SUPABASE_SAVE_MESSAGE:", JSON.stringify(rawInput));
+        await sendRuntimeMessage(sessionId, rawInput, "bay-bela");
       } catch {
         // Supabase failed, continue with local response
       }
