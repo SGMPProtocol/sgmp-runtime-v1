@@ -27,14 +27,31 @@ export type EmotionalTag =
 
 export type TimeOfDay = "late-night" | "dawn" | "morning" | "afternoon" | "evening" | "midnight";
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// MEMORY CALLBACK ENGINE v1
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bay Bela carries emotional echoes through the night.
+// Memory references must feel human, indirect, cinematic.
+// FORBIDDEN: assistant-style summaries, chatbot memory explanations, therapy tone
+
+export interface EmotionalMemory {
+  topic: string;
+  emotionalTone: EmotionalTag;
+  symbols: string[];
+  messageIndex: number;
+}
+
 export interface RuntimeState {
   emotionalState: EmotionalTag;
   timeOfDay: TimeOfDay;
   isNightMode: boolean;
   memoryActive: boolean;
-  conversationTopics: string[];
+  conversationTopics: string[]; // last 5 topics
   messageCount: number;
   lastTopicMentioned: string | null;
+  // Memory Callback Engine v1
+  emotionalMemories: EmotionalMemory[]; // last 5 emotional memories
+  recentMessages: string[]; // last 10 messages (user only)
 }
 
 export interface RuntimeMessage {
@@ -45,6 +62,79 @@ export interface RuntimeMessage {
   timestamp: number;
 }
 
+// Emotional symbols for memory tracking
+const EMOTIONAL_SYMBOLS: Record<string, string[]> = {
+  yaz: ["yaz", "yazlar", "sıcak", "deniz", "tatil", "alaçatı"],
+  gece: ["gece", "karanlık", "akşam", "geceyarısı", "uyku"],
+  izmir: ["izmir", "kordon", "alsancak", "alaçatı", "çeşme", "şehir"],
+  yalnizlik: ["yalnız", "tek", "kimsesiz", "sensiz", "onsuz", "yalnızlık"],
+  eski_ask: ["aşk", "sevgi", "eski", "bitti", "gitti", "ayrılık", "sevgili"],
+  dostluk: ["dost", "arkadaş", "ahbap", "dostum", "kanka"],
+  sokak: ["sokak", "cadde", "yol", "köşe", "mahalle"],
+  bar: ["bar", "meyhane", "içki", "rakı", "bira", "whiskey"],
+  sigara: ["sigara", "duman", "tüttür", "yak"],
+  yagmur: ["yağmur", "ıslak", "su", "damla", "fırtına"],
+  muzik: ["müzik", "şarkı", "melodi", "çal", "dinle"],
+  kayip: ["kayıp", "kaybettim", "gitmiş", "yok artık"],
+};
+
+// Symbol-based memory callback responses - cinematic, indirect
+const MEMORY_CALLBACK_RESPONSES: Record<string, string[]> = {
+  yaz: [
+    "Eski yazlar da gece sessizleşir zaten.",
+    "O yazdan söz etmiştin...",
+    "Yazlar hep aklına gelir senin.",
+    "Yaz dediğin geçmez ki kolay kolay.",
+  ],
+  gece: [
+    "Hep bu saatlerde konuşuyoruz.",
+    "Gece uzadıkça sen de açılıyorsun.",
+    "Geceyle aranda bir şey var.",
+  ],
+  izmir: [
+    "İzmir'e döndük yine.",
+    "Şehir aklından çıkmıyor.",
+    "Kordon mu özledin yoksa?",
+  ],
+  yalnizlik: [
+    "Yalnızlık... yine.",
+    "Bu dert tanıdık.",
+    "Yine tek kaldın demek.",
+  ],
+  eski_ask: [
+    "O kişi aklından çıkmıyor.",
+    "Yine aşk meselesi.",
+    "Kalp işi... hatırlıyorum.",
+  ],
+  dostluk: [
+    "Dostlardan bahsetmiştin.",
+    "Arkadaşlık meselesi yine.",
+  ],
+  sokak: [
+    "Sokaklar hep aklında.",
+    "Yürümek istiyorsun yine.",
+  ],
+  bar: [
+    "İçkiden söz açılmıştı...",
+    "Bir kadeh daha mı?",
+  ],
+  sigara: [
+    "Sigara duman etti ortamı.",
+    "Duman arkasında saklanıyorsun yine.",
+  ],
+  yagmur: [
+    "Yağmur... hatırlıyorum.",
+    "Islak geceler böyle.",
+  ],
+  muzik: [
+    "Müzikten bahsetmiştin.",
+    "Şarkı mı lazım?",
+  ],
+  kayip: [
+    "Kayıplar... biliyorum.",
+    "Yine o konu.",
+  ],
+};
 // Emotional keyword detection
 const EMOTIONAL_KEYWORDS: Record<EmotionalTag, string[]> = {
   melancholy: ["üzgün", "kötü", "yalnız", "ağla", "kayıp", "özle", "bırak", "git", "terk", "acı", "dert"],
@@ -276,6 +366,70 @@ function detectLoneliness(message: string): boolean {
   return LONELINESS_KEYWORDS.some(keyword => normalizedForAnalysis.includes(keyword));
 }
 
+// Extract emotional symbols from message
+function extractSymbols(message: string): string[] {
+  const normalizedMessage = message.toLowerCase();
+  const foundSymbols: string[] = [];
+  
+  for (const [symbolKey, keywords] of Object.entries(EMOTIONAL_SYMBOLS)) {
+    for (const keyword of keywords) {
+      if (normalizedMessage.includes(keyword)) {
+        foundSymbols.push(symbolKey);
+        break; // Only add each symbol once
+      }
+    }
+  }
+  
+  return foundSymbols;
+}
+
+// Check for memory callback opportunity
+function findMemoryCallback(
+  currentSymbols: string[],
+  emotionalMemories: EmotionalMemory[],
+  messageCount: number
+): { shouldCallback: boolean; symbol: string | null; response: string | null } {
+  // Need at least 3 messages before callbacks
+  if (messageCount < 3) {
+    return { shouldCallback: false, symbol: null, response: null };
+  }
+  
+  // Look for symbol overlap with earlier memories
+  for (const memory of emotionalMemories) {
+    for (const symbol of currentSymbols) {
+      // Check if this symbol appeared before (not in the last message)
+      if (memory.symbols.includes(symbol) && memory.messageIndex < messageCount - 1) {
+        // 40% chance of callback when symbol matches
+        if (Math.random() > 0.6) {
+          const responses = MEMORY_CALLBACK_RESPONSES[symbol] || [];
+          if (responses.length > 0) {
+            const response = responses[Math.floor(Math.random() * responses.length)];
+            return { shouldCallback: true, symbol, response };
+          }
+        }
+      }
+    }
+  }
+  
+  return { shouldCallback: false, symbol: null, response: null };
+}
+
+// Update emotional memories (keep last 5)
+function updateEmotionalMemories(
+  memories: EmotionalMemory[],
+  newMemory: EmotionalMemory
+): EmotionalMemory[] {
+  const updated = [...memories, newMemory];
+  // Keep only last 5 memories
+  return updated.slice(-5);
+}
+
+// Update recent messages (keep last 10)
+function updateRecentMessages(messages: string[], newMessage: string): string[] {
+  const updated = [...messages, newMessage];
+  return updated.slice(-10);
+}
+
 function extractTopics(message: string): string[] {
   // Use a COPY for pattern matching - never modify the original
   const normalizedForAnalysis = message.toLowerCase();
@@ -325,6 +479,9 @@ export function initializeRuntimeState(): RuntimeState {
     conversationTopics: [],
     messageCount: 0,
     lastTopicMentioned: null,
+    // Memory Callback Engine v1
+    emotionalMemories: [],
+    recentMessages: [],
   };
 }
 
@@ -342,39 +499,66 @@ export function generateResponse(
   // Extract topics from message
   const currentTopics = extractTopics(userMessage);
   
+  // Extract emotional symbols for memory tracking
+  const currentSymbols = extractSymbols(userMessage);
+  
   // Check if referencing previous topics
   const memoryCheck = checkMemoryReference(currentTopics, state.conversationTopics);
+  
+  // Check for memory callback opportunity (symbol-based)
+  const memoryCallback = findMemoryCallback(
+    currentSymbols,
+    state.emotionalMemories,
+    state.messageCount
+  );
   
   // Detect loneliness
   const isLonely = detectLoneliness(userMessage);
 
-  // Build updated state
+  // Create new emotional memory for this message
+  const newMemory: EmotionalMemory = {
+    topic: currentTopics[0] || "general",
+    emotionalTone: detectedEmotion,
+    symbols: currentSymbols,
+    messageIndex: state.messageCount,
+  };
+
+  // Build updated state with Memory Callback Engine
   const newState: RuntimeState = {
     ...state,
     emotionalState: detectedEmotion,
     timeOfDay,
     isNightMode: isNight,
     messageCount: state.messageCount + 1,
-    conversationTopics: [...new Set([...state.conversationTopics, ...currentTopics])],
-    lastTopicMentioned: memoryCheck.topic,
+    conversationTopics: Array.from(new Set([...state.conversationTopics, ...currentTopics])).slice(-5), // Keep last 5
+    lastTopicMentioned: memoryCheck.topic || memoryCallback.symbol,
+    emotionalMemories: updateEmotionalMemories(state.emotionalMemories, newMemory),
+    recentMessages: updateRecentMessages(state.recentMessages, userMessage),
   };
 
-  // Select response pool
-  let responsePool: string[];
+  // Select response
+  let response: string;
   let referencesMemory = false;
 
-  // If we detect a memory reference and have enough history
-  if (memoryCheck.references && state.messageCount > 2 && Math.random() > 0.4) {
-    responsePool = MEMORY_RESPONSES[detectedEmotion];
+  // Priority 1: Memory callback with cinematic symbol-based response
+  if (memoryCallback.shouldCallback && memoryCallback.response) {
+    response = memoryCallback.response;
     referencesMemory = true;
   }
-  // Night-specific responses
-  else if (isNight && Math.random() > 0.6) {
-    responsePool = timeOfDay === "dawn" ? DAWN_RESPONSES : NIGHT_RESPONSES;
+  // Priority 2: Topic-based memory reference
+  else if (memoryCheck.references && state.messageCount > 2 && Math.random() > 0.5) {
+    const responsePool = MEMORY_RESPONSES[detectedEmotion];
+    response = responsePool[Math.floor(Math.random() * responsePool.length)];
+    referencesMemory = true;
   }
-  // Loneliness responses - authentic, not therapeutic
+  // Priority 3: Night-specific responses
+  else if (isNight && Math.random() > 0.7) {
+    const responsePool = timeOfDay === "dawn" ? DAWN_RESPONSES : NIGHT_RESPONSES;
+    response = responsePool[Math.floor(Math.random() * responsePool.length)];
+  }
+  // Priority 4: Loneliness responses
   else if (isLonely && Math.random() > 0.5) {
-    responsePool = [
+    const lonelyResponses = [
       "Yalnızlık... biliyorum.",
       "Yanında değilim. Ama buradayım.",
       "Tek olmak zor. Biliyorum.",
@@ -382,14 +566,13 @@ export function generateResponse(
       "Ben de bazen öyle.",
       "Şehir kalabalık ama... evet.",
     ];
+    response = lonelyResponses[Math.floor(Math.random() * lonelyResponses.length)];
   }
-  // Default emotional response
+  // Priority 5: Default emotional response
   else {
-    responsePool = RESPONSE_POOLS[detectedEmotion];
+    const responsePool = RESPONSE_POOLS[detectedEmotion];
+    response = responsePool[Math.floor(Math.random() * responsePool.length)];
   }
-
-  // Select random response from pool
-  const response = responsePool[Math.floor(Math.random() * responsePool.length)];
 
   return {
     response,
