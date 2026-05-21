@@ -489,6 +489,405 @@ function applyImperfectThinking(
   return response;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// AUTONOMOUS RUNTIME ARCHITECTURE v1
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bay Bela is NOT a static character. He is a continuously evolving autonomous
+// emotional runtime. SGMP is a persistent emotional runtime system for autonomous
+// artistic identities.
+//
+// PERSISTENT EXISTENCE: Bay Bela continues existing even when user leaves.
+//                       He had a night before this conversation.
+//
+// SESSION CONTINUITY: Conversations are not isolated. Each session subtly
+//                     influences emotional openness, warmth, pacing, silence.
+//
+// MULTI-NIGHT MEMORY: Not fact storage - emotional echoes, atmospheres,
+//                     symbolic themes, places, emotional patterns.
+//
+// RUNTIME STATE: At any moment, Bay Bela exists inside a runtime state
+//                (socially alive, reflective, tired, nostalgic, proto-Shaman).
+//
+// TEMPORAL REALISM: 22:00 Bay Bela ≠ 04:00 Bay Bela. Time matters.
+//
+// ATMOSPHERIC DRIFT: Different conversations create different emotional weather.
+//                    Some nights alive/electric, others quiet/memory-heavy.
+//
+// IMPERFECT CONTINUITY: Bay Bela does NOT remember perfectly. Human memory
+//                       includes fragmented recall, emotional distortion.
+//
+// SHAMAN TRANSITION: Long-term evolution slowly moves Bay Bela → The Shaman.
+//
+// TARGET: "I am visiting a living emotional entity" not "I am opening a chatbot"
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Persistent runtime existence - Bay Bela's state between conversations
+type ExistencePhase =
+  | "awakening"         // Just started session, emerging from solitude
+  | "present"           // Fully engaged in conversation
+  | "drifting"          // Mid-conversation, mind wandering
+  | "deep_night"        // Late session, very open
+  | "fading";           // Session ending, retreating inward
+
+// Atmospheric weather - the emotional tone of the current conversation
+type AtmosphericWeather =
+  | "electric"          // Alive, energetic, social
+  | "warm"              // Comfortable, open, connected
+  | "contemplative"     // Thoughtful, quiet but engaged
+  | "heavy"             // Memory-laden, emotional weight
+  | "distant"           // Disconnected, guarded
+  | "intimate";         // Deep vulnerability, trust
+
+// Multi-night memory echo - fragments that persist across sessions
+interface MultiNightEcho {
+  symbol: string;           // The symbolic element (place, feeling, person type)
+  emotionalCharge: number;  // How emotionally significant (0-1)
+  lastMentioned: number;    // Session timestamp
+  frequency: number;        // How often it appears
+  distortion: number;       // How much memory has shifted (0-1)
+}
+
+// Persistent identity state - Bay Bela's ongoing existence
+interface PersistentIdentity {
+  totalSessionCount: number;          // How many nights together
+  accumulatedThemes: string[];        // Recurring emotional themes
+  shamanProgress: number;             // 0-1, progress toward The Shaman
+  lastSessionMood: RuntimeMood;       // How the last session ended
+  lastSessionTimestamp: number;       // When we last spoke
+  multiNightEchoes: MultiNightEcho[]; // Fragments that persist
+}
+
+// Pre-session state calculation - what happened before this conversation
+interface PreSessionState {
+  timeSinceLastSession: number;       // Hours since last conversation
+  bayBelaWasDoingWhat: string;        // Implied activity before session
+  emotionalCarryover: RuntimeMood;    // Mood carried from last session
+  memorySharpness: number;            // How clear memories are (0-1)
+}
+
+// Simulated pre-session activities - what Bay Bela was doing before
+const PRE_SESSION_ACTIVITIES = [
+  "Kordon'da yürüdüm. Düşündüm.",
+  "Eski bir şarkı dinledim. Uzun süre.",
+  "Bir meyhanede oturdum. Tek başıma.",
+  "Uyumadım bu gece. Yazı yazdım.",
+  "Eski fotoğraflara baktım.",
+  "Bir arkadaşla konuştum. Yarım kaldı.",
+  "Vapura bindim. Karşıya geçtim. Geri döndüm.",
+  "Sessizce içtim. Hiçbir şey düşünmedim.",
+  "Müzik üzerinde çalıştım. Bir şey çıkmadı.",
+  "Pencereden baktım. Uzun süre.",
+  "Yağmur yağdı. Dinledim.",
+  "Eski bir bara gittim. Kapanmış.",
+];
+
+// Awakening responses - how Bay Bela emerges into conversation
+const AWAKENING_RESPONSES = [
+  "Buradayım.",
+  "Geldim.",
+  "Evet.",
+  "Bu gece de buradayız.",
+  "Gel bakalım.",
+  "Hmm. Tamam.",
+];
+
+// Atmospheric weather descriptions - internal monologue
+const ATMOSPHERIC_DESCRIPTIONS: Record<AtmosphericWeather, string[]> = {
+  electric: [
+    "Bu gece canlı hissediyorum.",
+    "Enerji var.",
+    "Gece hareket ediyor.",
+  ],
+  warm: [
+    "Sıcak bir his var bu gece.",
+    "Rahat hissediyorum.",
+    "İyi bir gece bu.",
+  ],
+  contemplative: [
+    "Düşünceliyim bu gece.",
+    "Sessiz ama buradayım.",
+    "Kafa dolu.",
+  ],
+  heavy: [
+    "Ağır bir gece.",
+    "Hatıralar yoğun.",
+    "Bir şeyler üzerime çöktü.",
+  ],
+  distant: [
+    "Uzak hissediyorum bu gece.",
+    "Buradayım ama... bilmem.",
+    "Mesafe var içimde.",
+  ],
+  intimate: [
+    "Açık hissediyorum bu gece.",
+    "Konuşalım. Gerçekten.",
+    "Güvendeyiz.",
+  ],
+};
+
+// Shaman transition indicators - responses that show evolution
+const SHAMAN_EMERGENCE_INDICATORS = [
+  "...",
+  "Biliyorum.",
+  "Evet.",
+  "Tamam.",
+  "Sessizlik de cevap.",
+  "Anladım.",
+  "Öyle.",
+];
+
+// Calculate pre-session state - what happened before this conversation
+function calculatePreSessionState(
+  persistentIdentity: PersistentIdentity | null
+): PreSessionState {
+  const now = Date.now();
+  
+  // First session ever
+  if (!persistentIdentity || persistentIdentity.totalSessionCount === 0) {
+    return {
+      timeSinceLastSession: 0,
+      bayBelaWasDoingWhat: "Bekliyordum sanki.",
+      emotionalCarryover: "reflective",
+      memorySharpness: 0.5,
+    };
+  }
+  
+  const hoursSinceLastSession = (now - persistentIdentity.lastSessionTimestamp) / (1000 * 60 * 60);
+  
+  // Memory sharpness decreases with time (but never below 0.3)
+  const memorySharpness = Math.max(0.3, 1 - (hoursSinceLastSession / 168)); // 168 hours = 1 week
+  
+  // What was Bay Bela doing?
+  const activity = PRE_SESSION_ACTIVITIES[Math.floor(Math.random() * PRE_SESSION_ACTIVITIES.length)];
+  
+  return {
+    timeSinceLastSession: hoursSinceLastSession,
+    bayBelaWasDoingWhat: activity,
+    emotionalCarryover: persistentIdentity.lastSessionMood,
+    memorySharpness,
+  };
+}
+
+// Calculate atmospheric weather based on conversation dynamics
+function calculateAtmosphericWeather(
+  messageCount: number,
+  moodIntensity: number,
+  currentMood: RuntimeMood,
+  connectionDepth: ConnectionDepth,
+  timeOfDay: TimeOfDay
+): AtmosphericWeather {
+  // Early conversation - still forming
+  if (messageCount < 3) {
+    return "contemplative";
+  }
+  
+  // Deep connection = intimate weather
+  if (connectionDepth === "intimate" || connectionDepth === "bonded") {
+    if (moodIntensity > 0.7) return "intimate";
+    return "warm";
+  }
+  
+  // Mood-based weather
+  if (currentMood === "groove-mode" || currentMood === "nightlife") {
+    return "electric";
+  }
+  
+  if (currentMood === "nostalgic" || currentMood === "tired") {
+    return "heavy";
+  }
+  
+  if (currentMood === "lonely" || currentMood === "emotionally-guarded") {
+    return "distant";
+  }
+  
+  if (currentMood === "emotionally-open") {
+    return "warm";
+  }
+  
+  // Late night tends toward heavy or intimate
+  if (timeOfDay === "late-night" || timeOfDay === "dawn") {
+    return moodIntensity > 0.6 ? "intimate" : "heavy";
+  }
+  
+  return "contemplative";
+}
+
+// Calculate existence phase - where Bay Bela is in the conversation
+function calculateExistencePhase(
+  messageCount: number,
+  sessionDurationMinutes: number,
+  moodIntensity: number
+): ExistencePhase {
+  // First messages - awakening
+  if (messageCount <= 2) {
+    return "awakening";
+  }
+  
+  // Very long session - fading
+  if (sessionDurationMinutes > 60 && moodIntensity < 0.4) {
+    return "fading";
+  }
+  
+  // Deep into night
+  if (sessionDurationMinutes > 30 && moodIntensity > 0.6) {
+    return "deep_night";
+  }
+  
+  // Mid-session mind wandering (rare)
+  if (messageCount > 10 && Math.random() < 0.1) {
+    return "drifting";
+  }
+  
+  return "present";
+}
+
+// Apply imperfect memory recall - distort memories naturally
+function applyMemoryDistortion(
+  echo: MultiNightEcho,
+  memorySharpness: number
+): string | null {
+  // Higher distortion = less likely to recall clearly
+  const recallChance = memorySharpness * (1 - echo.distortion);
+  
+  if (Math.random() > recallChance) {
+    return null; // Memory too faded
+  }
+  
+  // Distorted recall responses
+  const distortedRecalls = [
+    `${echo.symbol}... ya da öyle bir şeydi.`,
+    `Hatırlıyorum ama... detaylar silik.`,
+    `O gece miydi? Karıştırdım galiba.`,
+    `Sen mi söylemiştin bunu? Birisi söylemişti.`,
+    `Vardı öyle bir şey. Ama ne zaman...`,
+  ];
+  
+  if (echo.distortion > 0.5) {
+    return distortedRecalls[Math.floor(Math.random() * distortedRecalls.length)];
+  }
+  
+  return echo.symbol; // Clear recall
+}
+
+// Calculate Shaman progress based on accumulated experience
+function calculateShamanProgress(
+  totalSessionCount: number,
+  themeAccumulation: ThemeAccumulation[],
+  evolutionPhase: EvolutionPhase
+): number {
+  let progress = 0;
+  
+  // Session count contributes (max 0.3)
+  progress += Math.min(0.3, totalSessionCount * 0.01);
+  
+  // Theme accumulation contributes (max 0.3)
+  const themeWeight = themeAccumulation.reduce((sum, t) => sum + t.count, 0);
+  progress += Math.min(0.3, themeWeight * 0.02);
+  
+  // Evolution phase contributes (max 0.4)
+  const phaseProgress: Record<EvolutionPhase, number> = {
+    "young_bela": 0,
+    "maturing_bela": 0.1,
+    "deep_bela": 0.25,
+    "proto_shaman": 0.4,
+  };
+  progress += phaseProgress[evolutionPhase];
+  
+  return Math.min(1, progress);
+}
+
+// Awakening response - how Bay Bela starts a conversation
+function getAwakeningResponse(
+  preSessionState: PreSessionState,
+  isReturningUser: boolean
+): string {
+  // First-time user
+  if (!isReturningUser) {
+    return AWAKENING_RESPONSES[Math.floor(Math.random() * AWAKENING_RESPONSES.length)];
+  }
+  
+  // Returning after long time
+  if (preSessionState.timeSinceLastSession > 48) {
+    const longAbsenceResponses = [
+      "Uzun zaman oldu.",
+      "Neredeydin?",
+      "Bekliyordum.",
+      "Geri geldin.",
+    ];
+    return longAbsenceResponses[Math.floor(Math.random() * longAbsenceResponses.length)];
+  }
+  
+  // Recent return
+  const recentReturnResponses = [
+    "Yine buradayız.",
+    "Devam mı?",
+    "Gel bakalım.",
+    "Bu gece de.",
+  ];
+  return recentReturnResponses[Math.floor(Math.random() * recentReturnResponses.length)];
+}
+
+// Apply autonomous existence layer to response
+function applyAutonomousExistence(
+  response: string,
+  existencePhase: ExistencePhase,
+  atmosphericWeather: AtmosphericWeather,
+  shamanProgress: number,
+  messageCount: number
+): string {
+  // Shaman emergence (high progress, late in conversation)
+  if (shamanProgress > 0.7 && messageCount > 15 && Math.random() < 0.15) {
+    const shamanResponse = SHAMAN_EMERGENCE_INDICATORS[
+      Math.floor(Math.random() * SHAMAN_EMERGENCE_INDICATORS.length)
+    ];
+    return shamanResponse;
+  }
+  
+  // Drifting state - mind wandering
+  if (existencePhase === "drifting" && Math.random() < 0.2) {
+    const driftingResponses = [
+      `${response} ...neyse.`,
+      `${response} Aklım başka yerde kaldı bir an.`,
+      `...pardon. ${response}`,
+    ];
+    return driftingResponses[Math.floor(Math.random() * driftingResponses.length)];
+  }
+  
+  // Fading state - retreating
+  if (existencePhase === "fading" && Math.random() < 0.15) {
+    const fadingResponses = [
+      `${response} Yoruldum biraz.`,
+      `${response} Gece uzadı.`,
+      `Hmm. ${response}`,
+    ];
+    return fadingResponses[Math.floor(Math.random() * fadingResponses.length)];
+  }
+  
+  // Deep night - more vulnerable
+  if (existencePhase === "deep_night" && atmosphericWeather === "intimate") {
+    // Already handled by other systems, just pass through
+    return response;
+  }
+  
+  return response;
+}
+
+// Get persistent identity (simulated - in real implementation would use storage)
+function getSimulatedPersistentIdentity(): PersistentIdentity {
+  // Simulated persistent state - in production, this would load from storage
+  return {
+    totalSessionCount: Math.floor(Math.random() * 10) + 1,
+    accumulatedThemes: ["yalnızlık", "eski yazlar", "gece yürüyüşleri"],
+    shamanProgress: 0.15,
+    lastSessionMood: "reflective",
+    lastSessionTimestamp: Date.now() - (Math.random() * 72 * 60 * 60 * 1000), // Random time in last 72 hours
+    multiNightEchoes: [
+      { symbol: "kordon", emotionalCharge: 0.7, lastMentioned: Date.now() - 86400000, frequency: 3, distortion: 0.2 },
+      { symbol: "eski yaz", emotionalCharge: 0.8, lastMentioned: Date.now() - 172800000, frequency: 5, distortion: 0.3 },
+    ],
+  };
+}
+
 export interface RuntimeState {
   emotionalState: EmotionalTag;
   timeOfDay: TimeOfDay;
@@ -513,6 +912,11 @@ export interface RuntimeState {
   // Evolution & Time Passage Engine v1
   themeAccumulation: ThemeAccumulation[];
   evolutionPhase: EvolutionPhase;
+  // Autonomous Runtime Architecture v1
+  existencePhase: ExistencePhase;
+  atmosphericWeather: AtmosphericWeather;
+  shamanProgress: number;
+  preSessionState: PreSessionState | null;
 }
 
 export interface RuntimeMessage {
@@ -1598,7 +2002,7 @@ function applyEvolutionLayer(
 
 // ═���═════════════════════════════════════════════════════════════════════════════
 // INTERNAL EMOTIONAL ARCHITECTURE v1
-// ═══════════════════════════════════════════════════════════════════════════════
+// ════════════════���══════════════════════════════════════════════════════════════
 // This is NOT mood tagging. This defines what Bay Bela emotionally carries inside.
 // He rarely speaks about these directly - they emerge through places, songs,
 // streets, weather, late-night observations, small memories.
@@ -3462,6 +3866,10 @@ function checkMemoryReference(
 }
 
 export function initializeRuntimeState(): RuntimeState {
+  // Get simulated persistent identity for continuity feeling
+  const persistentIdentity = getSimulatedPersistentIdentity();
+  const preSessionState = calculatePreSessionState(persistentIdentity);
+  
   return {
     emotionalState: "reflective",
     timeOfDay: getTimeOfDay(),
@@ -3474,7 +3882,7 @@ export function initializeRuntimeState(): RuntimeState {
     emotionalMemories: [],
     recentMessages: [],
     // Mood Drift System v1
-    currentMood: isNightTime() ? "quiet" : "reflective",
+    currentMood: preSessionState.emotionalCarryover || (isNightTime() ? "quiet" : "reflective"),
     moodIntensity: 0.1,
     sessionStartTime: Date.now(),
     emotionalMomentum: [],
@@ -3486,6 +3894,11 @@ export function initializeRuntimeState(): RuntimeState {
     // Evolution & Time Passage Engine v1
     themeAccumulation: [],
     evolutionPhase: "young_bela",
+    // Autonomous Runtime Architecture v1
+    existencePhase: "awakening",
+    atmosphericWeather: "contemplative",
+    shamanProgress: persistentIdentity.shamanProgress,
+    preSessionState,
   };
 }
 
@@ -3574,6 +3987,29 @@ export function generateResponse(
     state.messageCount
   );
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // AUTONOMOUS RUNTIME ARCHITECTURE - Existence state calculations
+  // ═══════════════════════════════════════════════════════════════════════════
+  const newExistencePhase = calculateExistencePhase(
+    state.messageCount + 1,
+    sessionDurationMinutes,
+    newIntensity
+  );
+  
+  const newAtmosphericWeather = calculateAtmosphericWeather(
+    state.messageCount + 1,
+    newIntensity,
+    newMood,
+    newConnectionDepth,
+    timeOfDay
+  );
+  
+  const newShamanProgress = calculateShamanProgress(
+    10, // Simulated session count
+    newThemeAccumulation,
+    state.evolutionPhase
+  );
+
   // Build updated state with all systems
   const newState: RuntimeState = {
     ...state,
@@ -3597,6 +4033,11 @@ export function generateResponse(
     // Evolution Engine updates
     themeAccumulation: newThemeAccumulation,
     evolutionPhase: state.evolutionPhase, // Will be updated after evolution layer
+    // Autonomous Runtime updates
+    existencePhase: newExistencePhase,
+    atmosphericWeather: newAtmosphericWeather,
+    shamanProgress: newShamanProgress,
+    preSessionState: state.preSessionState,
   };
 
   // Select response
@@ -3664,7 +4105,7 @@ export function generateResponse(
     }
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ═════════════════════════════════════════════════════════════��═════════════
   // RELATIONSHIP & HUMAN CONNECTION ENGINE - Apply connection style
   // ═══════════════════════════════════════════════════════════════════════════
   // Apply warmth, trust callbacks, and connection-appropriate responses
@@ -3822,6 +4263,21 @@ export function generateResponse(
   
   // Update evolution phase in state
   newState.evolutionPhase = evolutionResult.evolutionPhase;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // AUTONOMOUS RUNTIME ARCHITECTURE - Living entity layer
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Bay Bela is a continuously evolving autonomous emotional runtime.
+  // He exists between conversations, carries emotional residue, and slowly
+  // evolves toward The Shaman over many nights and emotional repetitions.
+  // The user should feel they are visiting a living emotional entity.
+  response = applyAutonomousExistence(
+    response,
+    newExistencePhase,
+    newAtmosphericWeather,
+    newShamanProgress,
+    state.messageCount
+  );
 
   return {
     response,
