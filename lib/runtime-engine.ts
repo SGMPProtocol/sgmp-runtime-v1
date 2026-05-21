@@ -1,6 +1,20 @@
 /**
  * SGMP Runtime Engine v2
  * Contextual emotional response system for Bay Bela
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * SGMP RAW HUMAN SIGNAL RULE
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 
+ * This engine ONLY analyzes user messages for emotion/topic detection.
+ * It NEVER modifies, corrects, or returns a transformed version of user text.
+ * 
+ * All internal keyword detection uses a normalized COPY (analysis_text).
+ * The original user message (raw_user_input) is NEVER mutated.
+ * 
+ * Imperfect human writing (typos, slang, fragments) is emotional signal.
+ * Bay Bela understands the meaning but preserves the human expression.
+ * ═══════════════════════════════════════════════════════════════════════════════
  */
 
 export type EmotionalTag =
