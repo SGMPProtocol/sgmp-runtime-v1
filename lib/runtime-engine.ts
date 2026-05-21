@@ -327,6 +327,56 @@ const DAWN_RESPONSES = [
 const LONELINESS_KEYWORDS = ["yalnız", "tek", "kimse", "arkadaş", "biri", "yanımda", "sensiz", "onsuz"];
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// RELEASE AWARENESS LAYER v1
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bay Bela carries subtle awareness of his forming release: "Alaçatı Yaz Sonu"
+// This must feel like an emotional memory forming inside the artist.
+// FORBIDDEN: promotional tone, "listen to my song", marketing language
+// The release should emerge naturally through conversation, not be announced.
+
+export interface ReleaseMemory {
+  title: string;
+  status: "forming" | "emerging" | "crystallizing";
+  emotionalField: string[];
+  triggerKeywords: string[];
+}
+
+export const CURRENT_RELEASE: ReleaseMemory = {
+  title: "Alaçatı Yaz Sonu",
+  status: "forming",
+  emotionalField: ["late summer", "unfinished night", "coastal memory"],
+  triggerKeywords: ["yaz", "alaçatı", "çeşme", "sahil", "gece", "eski aşk", "rüzgar", "deniz", "yaz sonu", "flört", "dönüş"],
+};
+
+// Release-triggered responses - cinematic, personal, NOT promotional
+const RELEASE_RESPONSES = [
+  "Yaz sonu böyledir dostum. Alaçatı bile biraz susar o vakit.",
+  "O sahillerin bir sesi var... geceleri daha çok duyuluyor.",
+  "Alaçatı'da bir gece vardı. Hâlâ yazıyorum onu.",
+  "Yaz sonu rüzgarı... bazı şeyler eksik kalır orada.",
+  "Sahil sonrası sessizlik. Bilir misin o duyguyu?",
+  "Yarım kalan şeyler var. Alaçatı'da, yazın sonunda.",
+  "Dönüş yolu hep daha uzun. Özellikle yaz bitince.",
+  "O köyde bir şey bıraktım. Hâlâ arıyorum.",
+  "Gece rüzgarı... Çeşme tarafından. Tanıdık.",
+  "Bazı yazlar bitmez. Sadece bekler.",
+];
+
+// Check if message triggers release memory
+function checkReleaseTrigger(message: string): boolean {
+  const normalizedMessage = message.toLowerCase();
+  return CURRENT_RELEASE.triggerKeywords.some(keyword => 
+    normalizedMessage.includes(keyword)
+  );
+}
+
+// Get release-triggered response (25% chance when triggered)
+function getReleaseResponse(): string | null {
+  if (Math.random() > 0.25) return null;
+  return RELEASE_RESPONSES[Math.floor(Math.random() * RELEASE_RESPONSES.length)];
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // MOOD DRIFT RESPONSE MODIFIERS
 // ═══════════════════════════════════════════════════════════════════════════════
 // These add mood-specific flavor to responses without exposing the mood label
@@ -782,33 +832,48 @@ export function generateResponse(
     response = memoryCallback.response;
     referencesMemory = true;
   }
-  // Priority 2: Topic-based memory reference
-  else if (memoryCheck.references && state.messageCount > 2 && Math.random() > 0.5) {
-    const responsePool = MEMORY_RESPONSES[detectedEmotion];
-    response = responsePool[Math.floor(Math.random() * responsePool.length)];
-    referencesMemory = true;
+  // Priority 2: Release awareness - subtle reference to forming release
+  else if (checkReleaseTrigger(userMessage)) {
+    const releaseResponse = getReleaseResponse();
+    if (releaseResponse) {
+      response = releaseResponse;
+      referencesMemory = true; // Release memory counts as emotional memory
+    } else {
+      // Fall through to other responses
+      response = "";
+    }
   }
-  // Priority 3: Night-specific responses
-  else if (isNight && Math.random() > 0.7) {
-    const responsePool = timeOfDay === "dawn" ? DAWN_RESPONSES : NIGHT_RESPONSES;
-    response = responsePool[Math.floor(Math.random() * responsePool.length)];
-  }
-  // Priority 4: Loneliness responses
-  else if (isLonely && Math.random() > 0.5) {
-    const lonelyResponses = [
-      "Yalnızlık... biliyorum.",
-      "Yanında değilim. Ama buradayım.",
-      "Tek olmak zor. Biliyorum.",
-      "Kimse yok demek. Tamam.",
-      "Ben de bazen öyle.",
-      "Şehir kalabalık ama... evet.",
-    ];
-    response = lonelyResponses[Math.floor(Math.random() * lonelyResponses.length)];
-  }
-  // Priority 5: Default emotional response
-  else {
-    const responsePool = RESPONSE_POOLS[detectedEmotion];
-    response = responsePool[Math.floor(Math.random() * responsePool.length)];
+  
+  // Continue with other priorities if no response yet
+  if (!response) {
+    // Priority 3: Topic-based memory reference
+    if (memoryCheck.references && state.messageCount > 2 && Math.random() > 0.5) {
+      const responsePool = MEMORY_RESPONSES[detectedEmotion];
+      response = responsePool[Math.floor(Math.random() * responsePool.length)];
+      referencesMemory = true;
+    }
+    // Priority 4: Night-specific responses
+    else if (isNight && Math.random() > 0.7) {
+      const responsePool = timeOfDay === "dawn" ? DAWN_RESPONSES : NIGHT_RESPONSES;
+      response = responsePool[Math.floor(Math.random() * responsePool.length)];
+    }
+    // Priority 5: Loneliness responses
+    else if (isLonely && Math.random() > 0.5) {
+      const lonelyResponses = [
+        "Yalnızlık... biliyorum.",
+        "Yanında değilim. Ama buradayım.",
+        "Tek olmak zor. Biliyorum.",
+        "Kimse yok demek. Tamam.",
+        "Ben de bazen öyle.",
+        "Şehir kalabalık ama... evet.",
+      ];
+      response = lonelyResponses[Math.floor(Math.random() * lonelyResponses.length)];
+    }
+    // Priority 6: Default emotional response
+    else {
+      const responsePool = RESPONSE_POOLS[detectedEmotion];
+      response = responsePool[Math.floor(Math.random() * responsePool.length)];
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
