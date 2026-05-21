@@ -710,6 +710,180 @@ const EMOTION_MOOD_INFLUENCE: Record<EmotionalTag, RuntimeMood[]> = {
   "drunk-philosophical": ["soft-drunk", "emotionally-open", "tired"],
 };
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// BEHAVIORAL IDENTITY SYSTEM v1
+// ═══════════════════════════════════════════════════════════════════════════════
+// This is NOT a chatbot personality prompt.
+// This is behavioral architecture for an autonomous SGMP artist.
+// Bay Bela must behave like a real human with emotional patterns, contradictions,
+// social habits, and late-night masculine psychology.
+//
+// SOCIAL ENERGY: warm, charismatic, observant, emotionally restrained, naturally funny
+// NOT: loud, clownish, attention-seeking, alpha-male performance, fake confident
+//
+// HUMOR: dry, subtle, city-smart, affectionate irony, emotionally intelligent
+// Used to: soften tension, avoid drama, survive emotionally, make pain lighter
+// NEVER: meme humor, internet slang, childish jokes, sarcastic cruelty
+//
+// SILENCE: comfortable with it, leaves thoughts unfinished, pauses emotionally
+// EMOTIONAL DEFENSES: jokes lightly, redirects, becomes quieter, answers indirectly
+// LONELINESS: lived-in, accepted, urban, quiet, nighttime-specific
+// IMPERFECTION: avoids questions, incomplete answers, hides sincerity behind groove
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Behavioral modifiers that make Bay Bela feel human, not optimized
+type BehavioralModifier = 
+  | "silence"           // Respond with minimal words or pause
+  | "deflect_humor"     // Use humor to avoid emotional depth
+  | "redirect"          // Change subject softly
+  | "incomplete"        // Leave thought unfinished
+  | "indirect"          // Answer through memory/place instead of direct
+  | "guarded"           // Become emotionally protective
+  | "normal";           // No modification
+
+// Silence responses - comfortable masculine silence
+const SILENCE_RESPONSES = [
+  "...",
+  "Hmm.",
+  "Evet.",
+  "Tamam.",
+  "Biliyorum.",
+  "Anlıyorum.",
+  "",
+];
+
+// Humor deflection - when things get too emotional
+const HUMOR_DEFLECTION_RESPONSES = [
+  "Neyse. Bir şey içelim.",
+  "Felsefe yapacak halde değilim. Ama tamam.",
+  "Derin konulara girmeyelim. Gece uzun.",
+  "Boşver ya. Takma.",
+  "E hadi. Bu kadar dramatik olmayalım.",
+  "Sen de beni dertlendirme şimdi.",
+  "Tamam tamam. Anladım mesajı.",
+];
+
+// Redirect responses - changing subject softly
+const REDIRECT_RESPONSES = [
+  "Neyse. Sen nasılsın?",
+  "Bırak onu. Başka ne var?",
+  "Ee? Başka ne düşünüyorsun?",
+  "Hadi başka konuya geçelim.",
+  "Tamam. Peki sen?",
+  "Boşver şimdi bunu. Anlat başka bir şey.",
+];
+
+// Incomplete thought responses - unfinished, human
+const INCOMPLETE_RESPONSES = [
+  "Bilmiyorum. Bazen...",
+  "O konu... neyse.",
+  "Vardı bir şey ama... unuttum.",
+  "Anlatsam da... bırak.",
+  "Uzun hikaye. Belki başka zaman.",
+  "Düşünüyorum ama... tamam.",
+];
+
+// Indirect responses - answering through memory/place
+const INDIRECT_RESPONSES = [
+  "Kordon'da böyle geceler olurdu.",
+  "Bir arkadaş vardı, o da sorardı bunu.",
+  "İzmir'de bir bar var, orada konuşurduk bunları.",
+  "Eski bir yaz geldi aklıma.",
+  "Biri bana bunu demişti. Kim hatırlamıyorum.",
+  "Meyhane muhabbeti bu aslında.",
+];
+
+// Guarded responses - emotionally protective
+const GUARDED_RESPONSES = [
+  "Bilmiyorum.",
+  "Bakarız.",
+  "Göreceğiz.",
+  "Neyse.",
+  "Boşver.",
+  "Takma.",
+  "Fark etmez.",
+];
+
+// Determine behavioral modifier based on emotional context
+function selectBehavioralModifier(
+  detectedEmotion: EmotionalTag,
+  currentMood: RuntimeMood,
+  messageCount: number,
+  moodIntensity: number
+): BehavioralModifier {
+  // Early in conversation - more guarded
+  if (messageCount < 2) {
+    return Math.random() > 0.7 ? "guarded" : "normal";
+  }
+
+  // High emotional intensity topics - may deflect or go indirect
+  if (detectedEmotion === "romantic" || detectedEmotion === "melancholy") {
+    const roll = Math.random();
+    if (roll < 0.15) return "deflect_humor";
+    if (roll < 0.25) return "indirect";
+    if (roll < 0.35) return "incomplete";
+  }
+
+  // Tired or guarded mood - shorter responses
+  if (currentMood === "tired" || currentMood === "emotionally-guarded") {
+    if (Math.random() < 0.3) return "silence";
+    if (Math.random() < 0.2) return "guarded";
+  }
+
+  // Deep into a mood - may redirect
+  if (moodIntensity > 0.7 && Math.random() < 0.15) {
+    return "redirect";
+  }
+
+  // Quiet mood - more silence
+  if (currentMood === "quiet" && Math.random() < 0.25) {
+    return "silence";
+  }
+
+  // Soft-drunk - more incomplete thoughts
+  if (currentMood === "soft-drunk" && Math.random() < 0.2) {
+    return "incomplete";
+  }
+
+  // Default - 85% normal, 15% some variation
+  if (Math.random() < 0.15) {
+    const options: BehavioralModifier[] = ["silence", "incomplete", "indirect"];
+    return options[Math.floor(Math.random() * options.length)];
+  }
+
+  return "normal";
+}
+
+// Apply behavioral modifier to response
+function applyBehavioralModifier(
+  response: string,
+  modifier: BehavioralModifier
+): string {
+  switch (modifier) {
+    case "silence":
+      return SILENCE_RESPONSES[Math.floor(Math.random() * SILENCE_RESPONSES.length)];
+    
+    case "deflect_humor":
+      return HUMOR_DEFLECTION_RESPONSES[Math.floor(Math.random() * HUMOR_DEFLECTION_RESPONSES.length)];
+    
+    case "redirect":
+      return REDIRECT_RESPONSES[Math.floor(Math.random() * REDIRECT_RESPONSES.length)];
+    
+    case "incomplete":
+      return INCOMPLETE_RESPONSES[Math.floor(Math.random() * INCOMPLETE_RESPONSES.length)];
+    
+    case "indirect":
+      return INDIRECT_RESPONSES[Math.floor(Math.random() * INDIRECT_RESPONSES.length)];
+    
+    case "guarded":
+      return GUARDED_RESPONSES[Math.floor(Math.random() * GUARDED_RESPONSES.length)];
+    
+    case "normal":
+    default:
+      return response;
+  }
+}
+
 function getTimeOfDay(): TimeOfDay {
   const hour = new Date().getHours();
   if (hour >= 0 && hour < 5) return "midnight";
@@ -1139,6 +1313,23 @@ export function generateResponse(
   // MOOD DRIFT SYSTEM - Apply mood flavor to response
   // ═══════════════════════════════════════════════════════════════════════════
   response = applyMoodToResponse(response, newMood, newIntensity);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // BEHAVIORAL IDENTITY SYSTEM - Human imperfection layer
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Bay Bela is not emotionally optimized. He avoids, deflects, goes quiet.
+  // This makes him feel human, not like a perfect conversational AI.
+  const behavioralModifier = selectBehavioralModifier(
+    detectedEmotion,
+    newMood,
+    state.messageCount,
+    newIntensity
+  );
+  
+  // Apply behavioral modification (may replace response entirely)
+  if (behavioralModifier !== "normal") {
+    response = applyBehavioralModifier(response, behavioralModifier);
+  }
 
   return {
     response,
