@@ -2,37 +2,28 @@
 
 import { supabase } from "@/lib/supabase";
 
-const BAY_BELA_RESPONSES = [
-  "Bazı geceler insan eve değil, eski haline dönmek ister dostum.",
-  "Şehir bazen insanın içindeki boşluğu büyütür.",
-  "Biraz müzik lazım sana. Ama eski bir şey.",
-  "Gecenin bu saatinde sorular cevaplardan daha dürüst.",
-  "Bazen susmak da bir cevaptır. Ama şehir hiç susmuyor.",
-  "İnsan bazen yürür, nereye gittiğini bilmeden. O yürüyüşler en güzel olanlar.",
-  "Whiskey'in güzel yanı, yudumlarken düşüncelerin yavaşlaması.",
-  "Alaçatı'da bir gece vardı. Hâlâ orada bir parçam.",
-  "Bazı şarkılar yazılmaz, yaşanır. Sonra kendiliğinden çıkar.",
-  "Gece uzun, ama sabah her zaman gelir. Merak etme.",
-];
+// ═══════════════════════════════════════════════════════════════════════════════
+// SGMP SESSION PERSISTENCE
+// ═══════════════════════════════════════════════════════════════════════════════
+// Sessions persist across page refreshes using localStorage session_id.
+// Messages are stored in Supabase with exact raw user input (never modified).
+// Bay Bela should feel like a continuous conversation, not a reset chatbot.
 
-export async function getOrCreateSession(artistId: string = "bay-bela") {
+export async function getOrCreateSession(artistId: string = "bay-bela", existingSessionId?: string) {
   try {
-    // Try to get existing session from localStorage key passed from client
-    const { data: existingSessions, error: fetchError } = await supabase
-      .from("runtime_sessions")
-      .select("*")
-      .eq("artist_id", artistId)
-      .eq("status", "active")
-      .order("created_at", { ascending: false })
-      .limit(1);
+    // If client provides an existing session ID, try to use it
+    if (existingSessionId) {
+      const { data: existingSession, error: fetchError } = await supabase
+        .from("runtime_sessions")
+        .select("*")
+        .eq("id", existingSessionId)
+        .eq("artist_id", artistId)
+        .single();
 
-    if (fetchError) {
-      console.error("[v0] Error fetching session:", fetchError);
-      return { success: false, error: fetchError.message };
-    }
-
-    if (existingSessions && existingSessions.length > 0) {
-      return { success: true, session: existingSessions[0] };
+      if (!fetchError && existingSession) {
+        return { success: true, session: existingSession };
+      }
+      // If session not found, fall through to create new one
     }
 
     // Create new session
@@ -43,7 +34,7 @@ export async function getOrCreateSession(artistId: string = "bay-bela") {
           artist_id: artistId,
           status: "active",
           context: {
-            mood: "playful but wounded",
+            mood: "reflective",
             location: "İzmir",
             time_of_day: "late-night",
           },
@@ -57,20 +48,23 @@ export async function getOrCreateSession(artistId: string = "bay-bela") {
       return { success: false, error: createError.message };
     }
 
-    return { success: true, session: newSession };
+    return { success: true, session: newSession, isNew: true };
   } catch (error) {
     console.error("[v0] Session error:", error);
     return { success: false, error: "Failed to get or create session" };
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// RAW INPUT INTEGRITY - Messages stored exactly as user typed them
+// ═══════════════════════════════════════════════════════════════════════════════
 export async function sendRuntimeMessage(
   sessionId: string,
   userMessage: string,
   artistId: string = "bay-bela"
 ) {
   try {
-    // Save user message
+    // Save user message - EXACT raw input, no modification
     const { error: userMsgError } = await supabase
       .from("runtime_messages")
       .insert([
@@ -78,7 +72,7 @@ export async function sendRuntimeMessage(
           session_id: sessionId,
           artist_id: artistId,
           role: "user",
-          content: userMessage,
+          content: userMessage, // RAW - never modify
         },
       ]);
 
@@ -87,58 +81,42 @@ export async function sendRuntimeMessage(
       return { success: false, error: userMsgError.message };
     }
 
-    // Generate fake Bay Bela response
-    const randomIndex = Math.floor(Math.random() * BAY_BELA_RESPONSES.length);
-    const bayBelaResponse = BAY_BELA_RESPONSES[randomIndex];
+    return { success: true };
+  } catch (error) {
+    console.error("[v0] Runtime message error:", error);
+    return { success: false, error: "Failed to send message" };
+  }
+}
 
-    // Small delay to simulate thinking
-    await new Promise((resolve) => setTimeout(resolve, 800));
-
-    // Save Bay Bela response
-    const { error: assistantMsgError } = await supabase
+// Save Bay Bela's response separately
+export async function saveAssistantMessage(
+  sessionId: string,
+  response: string,
+  emotionalTag: string,
+  artistId: string = "bay-bela"
+) {
+  try {
+    const { error } = await supabase
       .from("runtime_messages")
       .insert([
         {
           session_id: sessionId,
           artist_id: artistId,
           role: "assistant",
-          content: bayBelaResponse,
+          content: response,
+          metadata: { emotionalTag },
         },
       ]);
 
-    if (assistantMsgError) {
-      console.error("[v0] Error saving assistant message:", assistantMsgError);
-      return { success: false, error: assistantMsgError.message };
+    if (error) {
+      console.error("[v0] Error saving assistant message:", error);
+      return { success: false, error: error.message };
     }
 
-    // Log to artist_memories (emotional context)
-    await supabase.from("artist_memories").insert([
-      {
-        artist_id: artistId,
-        session_id: sessionId,
-        memory_type: "conversation",
-        content: {
-          user_input: userMessage,
-          response: bayBelaResponse,
-          emotional_state: "stable",
-        },
-      },
-    ]);
-
-    return {
-      success: true,
-      userMessage: {
-        role: "user" as const,
-        content: userMessage,
-      },
-      assistantMessage: {
-        role: "assistant" as const,
-        content: bayBelaResponse,
-      },
-    };
+    return { success: true };
   } catch (error) {
-    console.error("[v0] Runtime message error:", error);
-    return { success: false, error: "Failed to send message" };
+    console.error("[v0] Save assistant message error:", error);
+    return { success: false, error: "Failed to save response" };
   }
 }
 
@@ -159,5 +137,25 @@ export async function getSessionMessages(sessionId: string) {
   } catch (error) {
     console.error("[v0] Fetch messages error:", error);
     return { success: false, error: "Failed to fetch messages" };
+  }
+}
+
+// End current session (for "Yeni gece başlat")
+export async function endSession(sessionId: string) {
+  try {
+    const { error } = await supabase
+      .from("runtime_sessions")
+      .update({ status: "ended" })
+      .eq("id", sessionId);
+
+    if (error) {
+      console.error("[v0] Error ending session:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("[v0] End session error:", error);
+    return { success: false, error: "Failed to end session" };
   }
 }
