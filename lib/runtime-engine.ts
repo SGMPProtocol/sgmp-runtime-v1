@@ -81,6 +81,46 @@ export interface EmotionalMemory {
   messageIndex: number;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// FORWARD TYPE DECLARATIONS for Engine Systems
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Relationship & Human Connection Engine v1
+type ConnectionDepth = 
+  | "stranger"
+  | "acquaintance"
+  | "familiar"
+  | "intimate"
+  | "bonded";
+
+type SocialEnergy = 
+  | "night_person"
+  | "emotionally_tired"
+  | "quiet_charisma"
+  | "broken_but_real"
+  | "performer"
+  | "neutral";
+
+interface EmotionalDetail {
+  detail: string;
+  context: string;
+  emotionalWeight: number;
+  messageIndex: number;
+}
+
+// Evolution & Time Passage Engine v1
+type EvolutionPhase = 
+  | "young_bela"
+  | "maturing_bela"
+  | "deep_bela"
+  | "proto_shaman";
+
+interface ThemeAccumulation {
+  theme: string;
+  count: number;
+  lastMentioned: number;
+}
+
 export interface RuntimeState {
   emotionalState: EmotionalTag;
   timeOfDay: TimeOfDay;
@@ -102,6 +142,9 @@ export interface RuntimeState {
   socialEnergy: SocialEnergy;
   emotionalDetails: EmotionalDetail[];
   trustLevel: number;
+  // Evolution & Time Passage Engine v1
+  themeAccumulation: ThemeAccumulation[];
+  evolutionPhase: EvolutionPhase;
 }
 
 export interface RuntimeMessage {
@@ -890,6 +933,302 @@ function applyBehavioralModifier(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// EVOLUTION & TIME PASSAGE ENGINE v1
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bay Bela is NOT static. He is the younger phase of The Shaman.
+// Over time and through accumulated experience, he slowly evolves.
+//
+// TIME AWARENESS: bars disappearing, friendships fading, neighborhoods changing
+// EMOTIONAL AGING: quieter, softer, more observant, less performative
+// SHAMAN EVOLUTION: deeper silence, stronger spiritual awareness, slower pacing
+// MEMORY ACCUMULATION: repeated themes shape tone, rhythm, depth
+// NIGHT EVOLUTION: 22:00 social -> 01:30 reflective -> 04:00 almost Shaman-like
+// YOUTH RELATIONSHIP: misses younger self but rarely says it directly
+//
+// FORBIDDEN: explicit aging monologues, dramatic sadness, AI spiritual quotes
+// TARGET: "Bay Bela is slowly becoming someone older and deeper"
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Night hour phases - different versions of Bay Bela
+type NightHourPhase = 
+  | "early_night"       // 21:00-23:00 - social, humorous, groove
+  | "deep_night"        // 23:00-02:00 - reflective, warmer, slower
+  | "late_night"        // 02:00-04:00 - quiet, memory-heavy, exposed
+  | "pre_dawn";         // 04:00-06:00 - almost Shaman-like, spiritual
+
+// Time awareness responses - noticing change, passage
+const TIME_AWARENESS_RESPONSES = [
+  "Zaman tuhaf akıyor bu aralar.",
+  "Değişiyor her şey. Yavaş yavaş.",
+  "Eskiden farklıydı. Şimdi farklı.",
+  "Bazı şeyler geri gelmiyor. Kabul etmek lazım.",
+  "O bar kapandı. Çok gece geçti orada.",
+  "Eski mahalle değişmiş. Tanımadım neredeyse.",
+  "Gençler başka. Biz de öyleydik aslında.",
+  "Müzik de değişti. Ya da kulaklar değişti.",
+];
+
+// Emotional aging responses - becoming quieter, more precise
+const EMOTIONAL_AGING_RESPONSES = {
+  young_bela: [
+    "Hadi bir şeyler içelim.",
+    "Gece uzun. Keyif çıkar.",
+    "Anlat bakalım.",
+    "Devam et.",
+  ],
+  maturing_bela: [
+    "Anlıyorum.",
+    "Biliyorum o duyguyu.",
+    "Tamam. Ben buradayım.",
+    "Dinliyorum.",
+  ],
+  deep_bela: [
+    "...",
+    "Evet.",
+    "Hm.",
+    "Biliyorum.",
+    "Anlıyorum seni.",
+  ],
+  proto_shaman: [
+    "...",
+    "Tamam.",
+    "Evet. Biliyorum.",
+    "Sessizlik de cevap bazen.",
+    "Anladım.",
+  ],
+};
+
+// Night hour phase responses - evolving through the night
+const NIGHT_PHASE_RESPONSES: Record<NightHourPhase, string[]> = {
+  early_night: [
+    "Gece başlıyor. İyi gece.",
+    "Erken sayılır daha. Devam.",
+    "Şehir uyanık. Sen de.",
+    "Müzik lazım. Eski bir şey olsun.",
+  ],
+  deep_night: [
+    "Gece derinleşti. Sen de.",
+    "Bu saatte herkes daha dürüst.",
+    "Gece yarısı. Güzel saat.",
+    "Şimdi konuşulur. Gündüz değil.",
+  ],
+  late_night: [
+    "Gece uzadı. Ama biz hâlâ buradayız.",
+    "Bu saatte uyanık olan... bir sebebi var.",
+    "Şehir sustu. Biz kaldık.",
+    "Geç saat. Ama bazı şeyler geç saatte söylenir.",
+  ],
+  pre_dawn: [
+    "Şafak yaklaşıyor. Gece bitti mi?",
+    "Bu saatte... savunmalar düşüyor.",
+    "Sabah geliyor. Ama bir şey söylemek lazım önce.",
+    "Sessizlik var. Ama dolu bir sessizlik.",
+  ],
+};
+
+// Shaman emergence responses - spiritual depth surfacing
+const SHAMAN_EMERGENCE_RESPONSES = [
+  "Bazı şeyler söylenmese de anlaşılıyor.",
+  "Sessizlik de konuşuyor. Dinlemek lazım.",
+  "İnsan bazen kendinden kaçamıyor. Sabaha kadar koşsa da.",
+  "Derin geceler derin sorular getiriyor.",
+  "Her şeyin bir ritmi var. Seninkini bul.",
+  "Kaybolanlar da bir yerde duruyor. Göremiyoruz sadece.",
+];
+
+// Youth nostalgia responses - missing younger self (indirect)
+const YOUTH_NOSTALGIA_RESPONSES = [
+  "Eskiden daha kolaydı. Ya da öyle hatırlıyorum.",
+  "O zamanki enerji... başkaydı.",
+  "Gençken her şey daha hızlıydı.",
+  "Eski halimi özlüyorum bazen. Ama söylemiyorum.",
+  "O yıllar gitti. Ama bir şeyler kaldı.",
+  "Daha cesurduk. Ya da daha aptalca cesurduk.",
+];
+
+// Theme tracking keywords
+const THEME_KEYWORDS: Record<string, string[]> = {
+  loneliness: ["yalnız", "tek başına", "kimsesiz", "yapayalnız", "sensiz"],
+  old_summer: ["eski yaz", "o yaz", "yaz sonu", "yazlar"],
+  unfinished_love: ["eski sevgili", "yarım kaldı", "bitmedi", "unuttum mu"],
+  fading_friends: ["eski arkadaş", "görüşmüyoruz", "dağıldı", "kayboldu"],
+  late_night_silence: ["sessiz", "sustu", "kimsesiz gece", "boş sokak"],
+  disconnection: ["anlamıyorum", "yabancı", "farklı", "değişti her şey"],
+};
+
+// Get current night hour phase
+function getNightHourPhase(): NightHourPhase {
+  const hour = new Date().getHours();
+  
+  if (hour >= 21 && hour < 23) return "early_night";
+  if (hour >= 23 || hour < 2) return "deep_night";
+  if (hour >= 2 && hour < 4) return "late_night";
+  if (hour >= 4 && hour < 6) return "pre_dawn";
+  
+  // Daytime defaults to early_night behavior
+  return "early_night";
+}
+
+// Calculate evolution phase based on conversation depth and time
+function calculateEvolutionPhase(
+  messageCount: number,
+  sessionDurationMinutes: number,
+  moodIntensity: number,
+  themeAccumulation: ThemeAccumulation[]
+): EvolutionPhase {
+  // Calculate accumulated emotional weight
+  const totalThemeWeight = themeAccumulation.reduce((sum, t) => sum + t.count, 0);
+  
+  // Very early - young Bela
+  if (messageCount < 5 && sessionDurationMinutes < 10) {
+    return "young_bela";
+  }
+  
+  // Deep into conversation with heavy themes - proto Shaman
+  if (messageCount > 20 && totalThemeWeight > 8 && moodIntensity > 0.7) {
+    return "proto_shaman";
+  }
+  
+  // Long session or high intensity - deep Bela
+  if (messageCount > 12 || sessionDurationMinutes > 30 || moodIntensity > 0.6) {
+    return "deep_bela";
+  }
+  
+  // Default middle phase
+  return "maturing_bela";
+}
+
+// Track and update theme accumulation
+function updateThemeAccumulation(
+  existing: ThemeAccumulation[],
+  message: string,
+  messageIndex: number
+): ThemeAccumulation[] {
+  const normalized = message.toLowerCase();
+  const updated = [...existing];
+  
+  for (const [theme, keywords] of Object.entries(THEME_KEYWORDS)) {
+    for (const keyword of keywords) {
+      if (normalized.includes(keyword)) {
+        // Find existing or create new
+        const existingTheme = updated.find(t => t.theme === theme);
+        if (existingTheme) {
+          existingTheme.count += 1;
+          existingTheme.lastMentioned = messageIndex;
+        } else {
+          updated.push({ theme, count: 1, lastMentioned: messageIndex });
+        }
+        break; // Only count once per theme per message
+      }
+    }
+  }
+  
+  // Keep only top 6 themes
+  return updated.sort((a, b) => b.count - a.count).slice(0, 6);
+}
+
+// Should time awareness surface?
+function shouldSurfaceTimeAwareness(
+  messageCount: number,
+  evolutionPhase: EvolutionPhase
+): boolean {
+  // More likely in later phases
+  if (evolutionPhase === "proto_shaman" && Math.random() < 0.12) return true;
+  if (evolutionPhase === "deep_bela" && Math.random() < 0.08) return true;
+  if (messageCount > 10 && Math.random() < 0.05) return true;
+  return false;
+}
+
+// Should youth nostalgia surface? (rare, indirect)
+function shouldSurfaceYouthNostalgia(
+  evolutionPhase: EvolutionPhase,
+  themeAccumulation: ThemeAccumulation[]
+): boolean {
+  // Only in deeper phases
+  if (evolutionPhase === "young_bela") return false;
+  
+  // Check if nostalgia-related themes are accumulating
+  const nostalgiaThemes = themeAccumulation.filter(
+    t => t.theme === "old_summer" || t.theme === "fading_friends"
+  );
+  const nostalgiaWeight = nostalgiaThemes.reduce((sum, t) => sum + t.count, 0);
+  
+  if (nostalgiaWeight > 2 && Math.random() < 0.1) return true;
+  return false;
+}
+
+// Apply evolution layer to response
+function applyEvolutionLayer(
+  response: string,
+  messageCount: number,
+  sessionDurationMinutes: number,
+  moodIntensity: number,
+  themeAccumulation: ThemeAccumulation[],
+  isNight: boolean
+): { response: string; evolutionPhase: EvolutionPhase } {
+  // Calculate current evolution phase
+  const evolutionPhase = calculateEvolutionPhase(
+    messageCount,
+    sessionDurationMinutes,
+    moodIntensity,
+    themeAccumulation
+  );
+  
+  let evolved = response;
+  
+  // Night hour phase influence
+  if (isNight) {
+    const nightPhase = getNightHourPhase();
+    
+    // Pre-dawn - Shaman emergence (rare)
+    if (nightPhase === "pre_dawn" && Math.random() < 0.15) {
+      const shamanResponse = SHAMAN_EMERGENCE_RESPONSES[
+        Math.floor(Math.random() * SHAMAN_EMERGENCE_RESPONSES.length)
+      ];
+      evolved = `${evolved} ${shamanResponse}`;
+    }
+    
+    // Late night - deeper responses
+    if (nightPhase === "late_night" && evolutionPhase !== "young_bela" && Math.random() < 0.2) {
+      const lateResponse = NIGHT_PHASE_RESPONSES.late_night[
+        Math.floor(Math.random() * NIGHT_PHASE_RESPONSES.late_night.length)
+      ];
+      // Sometimes prepend, sometimes replace
+      if (Math.random() > 0.7) {
+        evolved = lateResponse;
+      }
+    }
+  }
+  
+  // Time awareness surfacing
+  if (shouldSurfaceTimeAwareness(messageCount, evolutionPhase)) {
+    const timeResponse = TIME_AWARENESS_RESPONSES[
+      Math.floor(Math.random() * TIME_AWARENESS_RESPONSES.length)
+    ];
+    evolved = `${evolved} ${timeResponse}`;
+  }
+  
+  // Youth nostalgia (rare, indirect)
+  if (shouldSurfaceYouthNostalgia(evolutionPhase, themeAccumulation)) {
+    const youthResponse = YOUTH_NOSTALGIA_RESPONSES[
+      Math.floor(Math.random() * YOUTH_NOSTALGIA_RESPONSES.length)
+    ];
+    evolved = `${evolved} ${youthResponse}`;
+  }
+  
+  // Evolution phase affects response style
+  if (evolutionPhase === "proto_shaman" && Math.random() < 0.25) {
+    // Shorter, more weighted responses
+    const protoResponses = EMOTIONAL_AGING_RESPONSES.proto_shaman;
+    if (response.length > 30) {
+      evolved = protoResponses[Math.floor(Math.random() * protoResponses.length)];
+    }
+  }
+  
+  return { response: evolved, evolutionPhase };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // INTERNAL EMOTIONAL ARCHITECTURE v1
 // ═══════════════════════════════════════════════════════════════════════════════
 // This is NOT mood tagging. This defines what Bay Bela emotionally carries inside.
@@ -1661,32 +2000,7 @@ function applyWorldContext(
 // TARGET: "Bay Bela is emotionally real" not "AI simulating emotional intelligence"
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// Connection depth tracking
-type ConnectionDepth = 
-  | "stranger"        // First interactions, guarded
-  | "acquaintance"    // Starting to open up
-  | "familiar"        // Comfortable, sharing more
-  | "intimate"        // Deep night conversations, real openness
-  | "bonded";         // True emotional connection established
-
-// Social energy types - who Bay Bela connects with
-type SocialEnergy = 
-  | "night_person"          // Someone who belongs to the night
-  | "emotionally_tired"     // Carrying weight, relatable
-  | "quiet_charisma"        // Calm confidence, no performance
-  | "broken_but_real"       // Slightly damaged, authentic
-  | "performer"             // Fake, performative - Bay Bela dislikes
-  | "neutral";              // No strong signal
-
-// Emotional detail memory - things Bay Bela naturally remembers
-interface EmotionalDetail {
-  detail: string;           // What was mentioned
-  context: string;          // Where/when in conversation
-  emotionalWeight: number;  // How significant (0-1)
-  messageIndex: number;     // When it was mentioned
-}
-
-// Connection state for the session
+// Connection state for the session (types declared at top of file)
 interface ConnectionState {
   depth: ConnectionDepth;
   socialEnergy: SocialEnergy;
@@ -2566,6 +2880,9 @@ export function initializeRuntimeState(): RuntimeState {
     socialEnergy: "neutral",
     emotionalDetails: [],
     trustLevel: 0,
+    // Evolution & Time Passage Engine v1
+    themeAccumulation: [],
+    evolutionPhase: "young_bela",
   };
 }
 
@@ -2645,6 +2962,15 @@ export function generateResponse(
     newSocialEnergy !== "neutral" ? newSocialEnergy : state.socialEnergy
   );
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EVOLUTION & TIME PASSAGE ENGINE - Theme accumulation
+  // ═══════════════════════════════════════════════════════════════════════════
+  const newThemeAccumulation = updateThemeAccumulation(
+    state.themeAccumulation,
+    userMessage,
+    state.messageCount
+  );
+
   // Build updated state with all systems
   const newState: RuntimeState = {
     ...state,
@@ -2665,13 +2991,16 @@ export function generateResponse(
     socialEnergy: newSocialEnergy !== "neutral" ? newSocialEnergy : state.socialEnergy,
     emotionalDetails: newEmotionalDetails,
     trustLevel: newTrustLevel,
+    // Evolution Engine updates
+    themeAccumulation: newThemeAccumulation,
+    evolutionPhase: state.evolutionPhase, // Will be updated after evolution layer
   };
 
   // Select response
   let response: string = "";
   let referencesMemory = false;
 
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ════════════════════════���══════════════════════════════════════════════════
   // SEMANTIC COGNITION LAYER - Primary response selection
   // ═══════════════════════════════════════════════════════════════════════════
   // Detect semantic topic for contextually relevant response
@@ -2827,6 +3156,25 @@ export function generateResponse(
     newIntensity,
     newMood
   );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // EVOLUTION & TIME PASSAGE ENGINE - Slow transformation layer
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Bay Bela is not static. He slowly evolves toward The Shaman.
+  // Time awareness, emotional aging, night phases, and theme accumulation
+  // create invisible but real change in his presence over conversation.
+  const evolutionResult = applyEvolutionLayer(
+    response,
+    state.messageCount,
+    sessionDurationMinutes,
+    newIntensity,
+    newThemeAccumulation,
+    isNight
+  );
+  response = evolutionResult.response;
+  
+  // Update evolution phase in state
+  newState.evolutionPhase = evolutionResult.evolutionPhase;
 
   return {
     response,
