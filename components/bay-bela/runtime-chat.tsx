@@ -1,5 +1,36 @@
 "use client";
 
+/**
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * SGMP RAW HUMAN SIGNAL RULE
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 
+ * User messages must be preserved EXACTLY as typed, including:
+ * - lowercase / uppercase choices
+ * - Turkish characters or missing Turkish characters  
+ * - typos
+ * - slang
+ * - punctuation mistakes
+ * - incomplete sentences
+ * - emotional fragments
+ * 
+ * NEVER:
+ * - correct grammar
+ * - normalize display text
+ * - rewrite user text
+ * - autocapitalize
+ * - add punctuation
+ * - translate or transform
+ * 
+ * Architecture:
+ * - raw_user_input: exact original text (display + database)
+ * - analysis_text: internal lowercase copy ONLY for topic/emotion detection
+ * 
+ * Bay Bela may understand the meaning, but must NEVER rewrite the user's message.
+ * Imperfect human writing is treated as emotional signal in SGMP.
+ * ═══════════════════════════════════════════════════════════════════════════════
+ */
+
 import { useState, useEffect, useRef } from "react";
 import {
   getOrCreateSession,
@@ -105,52 +136,58 @@ export function RuntimeChat() {
   }, [messages]);
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // SUBMIT HANDLER - CAPTURES RAW DRAFT, THEN CLEARS DRAFT
+  // SUBMIT HANDLER - RAW HUMAN SIGNAL RULE ENFORCED
   // ═══════════════════════════════════════════════════════════════════════════
   async function handleSubmit() {
-    // Step 1: Capture the EXACT raw user message from draft
-    const rawUserMessage = draftMessage;
+    // Step 1: Capture the EXACT raw user input (sacred - never modify)
+    const raw_user_input = draftMessage;
     
     // Step 2: Validate - do nothing if empty
-    if (!rawUserMessage.trim()) return;
+    if (!raw_user_input.trim()) return;
     if (isLoading) return;
     
     // Step 3: Clear draft IMMEDIATELY after capture (only place we clear it)
     setDraftMessage("");
     setIsLoading(true);
 
-    // Step 4: Generate Bay Bela response (this NEVER touches draftMessage)
+    // Step 4: Create analysis_text ONLY for emotion/topic detection
+    // This is a separate copy - it NEVER affects display or storage
+    const analysis_text = raw_user_input.toLowerCase();
+    
+    // Step 5: Generate Bay Bela response using analysis_text internally
+    // The generateResponse function receives raw_user_input but uses
+    // its own internal normalization for keyword detection
     const { response: bayBelaResponse, newState, referencesMemory, emotionalTag } = generateResponse(
-      rawUserMessage,
+      raw_user_input, // passed for analysis, but display/storage uses raw_user_input
       runtimeState
     );
 
-    // Step 5: Update runtime state
+    // Step 6: Update runtime state
     setRuntimeState(newState);
 
-    // Step 6: Append raw user message to chat (EXACT text user typed)
-    setMessages((prev) => [...prev, { role: "user", content: rawUserMessage }]);
+    // Step 7: Append raw_user_input to chat (EXACT text user typed - no modification)
+    setMessages((prev) => [...prev, { role: "user", content: raw_user_input }]);
 
-    // Step 7: Thinking delay
+    // Step 8: Thinking delay
     const thinkingDelay = getThinkingDelay(newState.emotionalState);
     await new Promise((resolve) => setTimeout(resolve, thinkingDelay));
 
-    // Step 8: Memory pulse effect
+    // Step 9: Memory pulse effect
     if (referencesMemory) {
       setShowMemoryPulse(true);
       setTimeout(() => setShowMemoryPulse(false), 3000);
     }
 
-    // Step 9: Save to Supabase (raw user message only)
+    // Step 10: Save raw_user_input to Supabase (EXACT text - no modification)
     if (isConnected && sessionId !== LOCAL_SESSION_ID) {
       try {
-        await sendRuntimeMessage(sessionId, rawUserMessage, "bay-bela");
+        await sendRuntimeMessage(sessionId, raw_user_input, "bay-bela");
       } catch {
         // Supabase failed, continue
       }
     }
 
-    // Step 10: Append Bay Bela response to chat
+    // Step 11: Append Bay Bela response to chat
     setMessages((prev) => [
       ...prev,
       {
