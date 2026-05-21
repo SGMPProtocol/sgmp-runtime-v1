@@ -210,7 +210,8 @@ function isNightTime(): boolean {
 }
 
 function detectEmotion(message: string, previousState: EmotionalTag): EmotionalTag {
-  const lowerMessage = message.toLowerCase();
+  // Use a COPY for keyword analysis - never modify the original
+  const normalizedForAnalysis = message.toLowerCase();
   
   // Count keyword matches for each emotion
   const scores: Record<EmotionalTag, number> = {
@@ -224,7 +225,7 @@ function detectEmotion(message: string, previousState: EmotionalTag): EmotionalT
 
   for (const [emotion, keywords] of Object.entries(EMOTIONAL_KEYWORDS)) {
     for (const keyword of keywords) {
-      if (lowerMessage.includes(keyword)) {
+      if (normalizedForAnalysis.includes(keyword)) {
         scores[emotion as EmotionalTag] += 1;
       }
     }
@@ -253,14 +254,15 @@ function detectEmotion(message: string, previousState: EmotionalTag): EmotionalT
 }
 
 function detectLoneliness(message: string): boolean {
-  const lowerMessage = message.toLowerCase();
-  return LONELINESS_KEYWORDS.some(keyword => lowerMessage.includes(keyword));
+  // Use a COPY for keyword analysis - never modify the original
+  const normalizedForAnalysis = message.toLowerCase();
+  return LONELINESS_KEYWORDS.some(keyword => normalizedForAnalysis.includes(keyword));
 }
 
 function extractTopics(message: string): string[] {
-  // Simple topic extraction based on nouns and key phrases
+  // Use a COPY for pattern matching - never modify the original
+  const normalizedForAnalysis = message.toLowerCase();
   const topics: string[] = [];
-  const lowerMessage = message.toLowerCase();
   
   const topicPatterns = [
     { pattern: /aşk|sevgi|sev/i, topic: "aşk" },
@@ -273,10 +275,11 @@ function extractTopics(message: string): string[] {
     { pattern: /iş|çalış|para/i, topic: "iş" },
     { pattern: /aile|anne|baba/i, topic: "aile" },
     { pattern: /arkadaş|dost/i, topic: "arkadaşlık" },
+    { pattern: /yaz|mevsim|sıcak/i, topic: "yaz" },
   ];
 
   for (const { pattern, topic } of topicPatterns) {
-    if (pattern.test(lowerMessage)) {
+    if (pattern.test(normalizedForAnalysis)) {
       topics.push(topic);
     }
   }
