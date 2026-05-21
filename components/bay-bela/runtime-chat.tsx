@@ -104,36 +104,60 @@ export function RuntimeChat() {
   async function handleSend() {
     if (!canSend) return;
 
-    // Capture the EXACT raw input immediately - this is the source of truth
-    const rawInput = input;
+    // ═══════════════════════════════════════════════════════════════════
+    // CRITICAL: RAW USER INPUT PRESERVATION
+    // The value captured here is SACRED and must NEVER be transformed
+    // ═══════════════════════════════════════════════════════════════════
     
-    // Debug logging to trace the exact value
-    console.log("[v0] RAW_USER_INPUT:", JSON.stringify(rawInput));
+    // Step 1: Capture EXACT raw input from the text field
+    const RAW_USER_INPUT: string = input;
+    
+    // Step 2: Create immutable copy for display (frozen to prevent mutation)
+    const DISPLAYED_MESSAGE: string = String(RAW_USER_INPUT);
+    
+    // Step 3: Create separate copy ONLY for keyword analysis
+    const NORMALIZED_INPUT: string = RAW_USER_INPUT.toLowerCase();
+    
+    // Debug logging - trace exact values through the flow
+    console.log("[v0] ════════════════════════════════════════");
+    console.log("[v0] RAW_USER_INPUT:", JSON.stringify(RAW_USER_INPUT));
+    console.log("[v0] RAW_USER_INPUT length:", RAW_USER_INPUT.length);
+    console.log("[v0] RAW_USER_INPUT charCodes:", Array.from(RAW_USER_INPUT).map(c => c.charCodeAt(0)));
+    console.log("[v0] DISPLAYED_MESSAGE:", JSON.stringify(DISPLAYED_MESSAGE));
+    console.log("[v0] NORMALIZED_INPUT (analysis only):", JSON.stringify(NORMALIZED_INPUT));
+    console.log("[v0] ════════════════════════════════════════");
     
     // Clear input AFTER capturing
     setInput("");
     setIsLoading(true);
 
     // Generate response using runtime engine
-    // NOTE: generateResponse only reads the message for keyword detection
-    // It NEVER modifies or returns a modified version of the user message
+    // NOTE: generateResponse receives the raw message for ANALYSIS ONLY
+    // It returns a response but NEVER modifies or returns the user message
     const { response, newState, referencesMemory, emotionalTag } = generateResponse(
-      rawInput,
+      RAW_USER_INPUT, // Pass raw for analysis, but we display DISPLAYED_MESSAGE
       runtimeState
     );
 
     // Update runtime state
     setRuntimeState(newState);
 
-    // Create the user message object with EXACT raw input
+    // Create the user message object with DISPLAYED_MESSAGE (unmodified raw input)
     const userMessageObject: Message = { 
       role: "user", 
-      content: rawInput // Use rawInput directly, no intermediate variables
+      content: DISPLAYED_MESSAGE // MUST be the exact raw input
     };
     
-    console.log("[v0] DISPLAYED_USER_MESSAGE:", JSON.stringify(userMessageObject.content));
+    // Integrity check: verify message was not mutated
+    if (userMessageObject.content !== RAW_USER_INPUT) {
+      console.error("[v0] CRITICAL: Message was mutated!");
+      console.error("[v0] Original:", JSON.stringify(RAW_USER_INPUT));
+      console.error("[v0] Mutated:", JSON.stringify(userMessageObject.content));
+    }
+    
+    console.log("[v0] STORED_MESSAGE:", JSON.stringify(userMessageObject.content));
 
-    // Add user message to state
+    // Add user message to state - this is what gets rendered
     setMessages((prev) => [...prev, userMessageObject]);
 
     // Calculate thinking delay based on emotional complexity
@@ -149,8 +173,8 @@ export function RuntimeChat() {
     // Try Supabase logging with EXACT raw message, but don't block on failure
     if (isConnected && sessionId !== LOCAL_SESSION_ID) {
       try {
-        console.log("[v0] SUPABASE_SAVE_MESSAGE:", JSON.stringify(rawInput));
-        await sendRuntimeMessage(sessionId, rawInput, "bay-bela");
+        console.log("[v0] SUPABASE_STORING:", JSON.stringify(DISPLAYED_MESSAGE));
+        await sendRuntimeMessage(sessionId, DISPLAYED_MESSAGE, "bay-bela");
       } catch {
         // Supabase failed, continue with local response
       }
@@ -240,7 +264,12 @@ export function RuntimeChat() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-thin">
-        {messages.map((message, index) => (
+        {messages.map((message, index) => {
+          // Log what is actually being rendered
+          if (message.role === "user") {
+            console.log("[v0] RENDERING_USER_MESSAGE:", JSON.stringify(message.content));
+          }
+          return (
           <div
             key={index}
             className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-300`}
@@ -280,7 +309,8 @@ export function RuntimeChat() {
               <p className="text-sm leading-relaxed">{message.content}</p>
             </div>
           </div>
-        ))}
+          );
+        })}
 
         {/* Typing indicator */}
         {isLoading && (
