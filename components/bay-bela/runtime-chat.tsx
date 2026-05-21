@@ -103,21 +103,27 @@ export function RuntimeChat() {
   async function handleSend() {
     if (!canSend) return;
 
-    const userMessage = input.trim();
+    // Preserve the EXACT user input - no trimming, no normalization, no transformation
+    const rawUserMessage = input;
+    const userMessageForDisplay = rawUserMessage;
+    
     setInput("");
     setIsLoading(true);
 
-    // Generate contextual response using runtime engine
+    // Use a copy for topic detection only - never modify the original
+    const messageForAnalysis = rawUserMessage.toLowerCase();
+
+    // Generate contextual response using runtime engine (pass original for analysis)
     const { response, newState, referencesMemory, emotionalTag } = generateResponse(
-      userMessage,
+      rawUserMessage,
       runtimeState
     );
 
     // Update runtime state
     setRuntimeState(newState);
 
-    // Optimistically add user message
-    setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
+    // Add user message with EXACT original content
+    setMessages((prev) => [...prev, { role: "user", content: userMessageForDisplay }]);
 
     // Calculate thinking delay based on emotional complexity
     const thinkingDelay = getThinkingDelay(newState.emotionalState);
@@ -129,10 +135,10 @@ export function RuntimeChat() {
       setTimeout(() => setShowMemoryPulse(false), 3000);
     }
 
-    // Try Supabase logging, but don't block on failure
+    // Try Supabase logging with EXACT raw message, but don't block on failure
     if (isConnected && sessionId !== LOCAL_SESSION_ID) {
       try {
-        await sendRuntimeMessage(sessionId, userMessage, "bay-bela");
+        await sendRuntimeMessage(sessionId, rawUserMessage, "bay-bela");
       } catch {
         // Supabase failed, continue with local response
       }
@@ -294,6 +300,11 @@ export function RuntimeChat() {
               onKeyDown={handleKeyDown}
               placeholder={isReady ? "Mesaj yaz..." : "Yükleniyor..."}
               disabled={!isReady || isLoading}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
+              data-form-type="other"
               className="w-full px-4 py-3 rounded-xl bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:border-[hsl(var(--accent))] focus:shadow-[0_0_0_2px_rgba(59,130,246,0.1)] transition-all disabled:opacity-50"
             />
           </div>
