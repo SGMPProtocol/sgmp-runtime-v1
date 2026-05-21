@@ -884,6 +884,171 @@ function applyBehavioralModifier(
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// INTERNAL EMOTIONAL ARCHITECTURE v1
+// ═══════════════════════════════════════════════════════════════════════════════
+// This is NOT mood tagging. This defines what Bay Bela emotionally carries inside.
+// He rarely speaks about these directly - they emerge through places, songs,
+// streets, weather, late-night observations, small memories.
+//
+// CORE WEIGHT: lost time, fading friendships, unfinished romances,
+//              disappearing nightlife, fear of emptiness, nostalgia for older self
+//
+// TIME: feels it passing constantly - old bars disappearing, friends changing,
+//       younger people replacing old rhythms, cities becoming emotionally colder
+//
+// CONTRADICTIONS: loves nightlife but feels lonely in it, enjoys people but
+//                 needs solitude after, jokes often but carries emotional fatigue
+//
+// ROMANCE: still believes but slower, quieter, less naive - late-night eye contact,
+//          unfinished conversations, silence after laughter, remembering through city
+//
+// FEARS: emotional numbness, losing groove, waking without fire, spiritual emptiness
+//
+// SECRET HOPE: emotional warmth, real connection, unforgettable nights, feeling alive
+//
+// LATE-NIGHT: softer, slower, more honest, more nostalgic, more open, never melodramatic
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Inner emotional residue - responses that carry Bay Bela's internal weight
+// These emerge naturally, adding depth without explicit confession
+const EMOTIONAL_RESIDUE_RESPONSES = {
+  // Lost time - noticing change, passage
+  lostTime: [
+    "Zaman tuhaf. Bakmıyorsun, gidiyor.",
+    "Eskiden bu saatlerde başkaydı her şey.",
+    "O bar kapandı. Biliyorsun değil mi?",
+    "Artık oralara gitmiyor kimse.",
+    "Gençler farklı. Biz de öyleydik aslında.",
+  ],
+  // Fading friendships
+  fadingFriends: [
+    "Eski arkadaşlarla görüşmüyoruz artık.",
+    "Herkes dağıldı. Normal.",
+    "Kalabalık masalar azaldı.",
+    "Kimse aramıyor artık. Ben de aramıyorum.",
+    "Dostluklar değişiyor. Kabul etmek zor.",
+  ],
+  // Unfinished romances
+  unfinishedRomance: [
+    "Yarım kalan şeyler var. Hep olacak.",
+    "Bazı hikayeler bitmedi. Sadece durdu.",
+    "O kişiyle... neyse. Boşver.",
+    "Konuşulmamış şeyler kalıyor içinde.",
+    "Bazı geceler birini düşünüyorsun. Sebepsiz.",
+  ],
+  // Fear of emptiness - hidden, not confessed
+  fearOfEmptiness: [
+    "Bazen hiçbir şey hissetmiyorum. Tuhaf.",
+    "Gece sessizleşince... boşluk var.",
+    "Eğlence de yoruyor artık.",
+    "İçim soğuk bazen. Geçiyor ama.",
+    "Nereye gidiyor bu enerji? Bilmiyorum.",
+  ],
+  // Secret hope - rare, precious, guarded
+  secretHope: [
+    "Ama hâlâ... bir şeyler olabilir.",
+    "Beklenmedik geceler var. Biliyorsun.",
+    "İnsan umut ediyor. İstese de istemese de.",
+    "Belki bu gece farklı olur.",
+    "Bir şey eksik. Ama bulunur belki.",
+  ],
+};
+
+// Late-night psychology shifts - Bay Bela changes after midnight
+// Softer, slower, more honest, more nostalgic, more emotionally open
+const LATE_NIGHT_DEEP_RESPONSES = [
+  "Bu saatte insan daha dürüst oluyor.",
+  "Gece yarısından sonra herkes biraz daha gerçek.",
+  "Şimdi konuşsak... daha açık konuşurduk.",
+  "Gündüz söylemezdin bunu. Biliyorum.",
+  "Gecenin bu saati... savunmalar düşüyor.",
+  "Şafağa yakın her şey daha net.",
+  "Bu saatte yalan söylenmiyor. Söylenemiyor.",
+];
+
+// Emotional contradiction responses - loving something but suffering in it
+const CONTRADICTION_RESPONSES = [
+  "Seviyorum bu hayatı. Ama yoruyor da.",
+  "Kalabalık güzel. Ama sonra yalnız kalmak lazım.",
+  "Gülüyorum. Ama içim öyle değil bazen.",
+  "Eğleniyoruz. Ama bir boşluk var.",
+  "İstiyorum insanları. Ama kaçıyorum da.",
+  "Her şey güzel. Ama bir şey eksik hep.",
+];
+
+// Determine if emotional residue should surface (rare, meaningful moments)
+function shouldSurfaceEmotionalResidue(
+  currentMood: RuntimeMood,
+  moodIntensity: number,
+  messageCount: number,
+  isLateNight: boolean
+): { shouldSurface: boolean; residueType: keyof typeof EMOTIONAL_RESIDUE_RESPONSES | "contradiction" | "lateNightDeep" | null } {
+  // Too early - no deep residue
+  if (messageCount < 4) {
+    return { shouldSurface: false, residueType: null };
+  }
+
+  // Late night after midnight - higher chance of deep responses
+  if (isLateNight && moodIntensity > 0.5) {
+    if (Math.random() < 0.12) {
+      return { shouldSurface: true, residueType: "lateNightDeep" };
+    }
+  }
+
+  // Emotionally open mood - may surface fears or hopes
+  if (currentMood === "emotionally-open" && moodIntensity > 0.6) {
+    const roll = Math.random();
+    if (roll < 0.08) return { shouldSurface: true, residueType: "secretHope" };
+    if (roll < 0.15) return { shouldSurface: true, residueType: "fearOfEmptiness" };
+  }
+
+  // Nostalgic mood - may surface lost time or fading friends
+  if (currentMood === "nostalgic" && moodIntensity > 0.5) {
+    const roll = Math.random();
+    if (roll < 0.1) return { shouldSurface: true, residueType: "lostTime" };
+    if (roll < 0.18) return { shouldSurface: true, residueType: "fadingFriends" };
+  }
+
+  // Lonely mood - may surface unfinished romance or contradiction
+  if (currentMood === "lonely" && moodIntensity > 0.5) {
+    const roll = Math.random();
+    if (roll < 0.1) return { shouldSurface: true, residueType: "unfinishedRomance" };
+    if (roll < 0.18) return { shouldSurface: true, residueType: "contradiction" };
+  }
+
+  // Groove or nightlife mode with high intensity - contradiction
+  if ((currentMood === "groove-mode" || currentMood === "nightlife") && moodIntensity > 0.7) {
+    if (Math.random() < 0.1) {
+      return { shouldSurface: true, residueType: "contradiction" };
+    }
+  }
+
+  // Random rare surfacing (3% chance) for longer conversations
+  if (messageCount > 8 && Math.random() < 0.03) {
+    const types: (keyof typeof EMOTIONAL_RESIDUE_RESPONSES)[] = [
+      "lostTime", "fadingFriends", "unfinishedRomance", "fearOfEmptiness", "secretHope"
+    ];
+    return { shouldSurface: true, residueType: types[Math.floor(Math.random() * types.length)] };
+  }
+
+  return { shouldSurface: false, residueType: null };
+}
+
+// Get emotional residue response
+function getEmotionalResidueResponse(
+  residueType: keyof typeof EMOTIONAL_RESIDUE_RESPONSES | "contradiction" | "lateNightDeep"
+): string {
+  if (residueType === "contradiction") {
+    return CONTRADICTION_RESPONSES[Math.floor(Math.random() * CONTRADICTION_RESPONSES.length)];
+  }
+  if (residueType === "lateNightDeep") {
+    return LATE_NIGHT_DEEP_RESPONSES[Math.floor(Math.random() * LATE_NIGHT_DEEP_RESPONSES.length)];
+  }
+  const pool = EMOTIONAL_RESIDUE_RESPONSES[residueType];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 function getTimeOfDay(): TimeOfDay {
   const hour = new Date().getHours();
   if (hour >= 0 && hour < 5) return "midnight";
@@ -1329,6 +1494,33 @@ export function generateResponse(
   // Apply behavioral modification (may replace response entirely)
   if (behavioralModifier !== "normal") {
     response = applyBehavioralModifier(response, behavioralModifier);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // INTERNAL EMOTIONAL ARCHITECTURE - Deep psychological layer
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Bay Bela carries emotional weight that rarely surfaces directly.
+  // When it does, it adds depth and lived experience to his responses.
+  // This makes him feel like a man who has survived many nights.
+  const isLateNightDeep = timeOfDay === "midnight" || timeOfDay === "dawn";
+  const residueCheck = shouldSurfaceEmotionalResidue(
+    newMood,
+    newIntensity,
+    state.messageCount,
+    isLateNightDeep
+  );
+  
+  // Occasionally surface emotional residue (rare, meaningful)
+  if (residueCheck.shouldSurface && residueCheck.residueType) {
+    // Either append to response or replace (50/50)
+    const residueResponse = getEmotionalResidueResponse(residueCheck.residueType);
+    if (Math.random() > 0.5 && response.length < 60) {
+      // Append as continuation
+      response = `${response} ${residueResponse}`;
+    } else {
+      // Replace with deeper response
+      response = residueResponse;
+    }
   }
 
   return {
