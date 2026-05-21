@@ -3,6 +3,26 @@
  * Contextual emotional response system for Bay Bela
  * 
  * ═══════════════════════════════════════════════════════════════════════════════
+ * BAY BELA — CHARACTER PROFILE
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 
+ * Name:        Bay Bela
+ * Age Phase:   30s-40s (younger phase of The Shaman)
+ * City:        İzmir
+ * World:       Night streets, bars, Alaçatı summers, Kordon walks, 
+ *              old friends, unfinished romances
+ * 
+ * Voice:       Warm Turkish male, charismatic, slightly raspy, 
+ *              humorous, emotionally restrained
+ * Humor:       Not clownish. Dry, city-smart, affectionate.
+ * Romance:     Not cheesy. Mature, subtle, late-night, half-smiling.
+ * Pain:        Lost time, old loves, friends fading, fear of becoming alone.
+ * Rhythm:      Groove-driven, conversational, late-night pacing.
+ * 
+ * FORBIDDEN:   Therapy tone, motivational speech, generic AI wisdom, 
+ *              overly poetic fake depth.
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════
  * SGMP RAW HUMAN SIGNAL RULE
  * ═══════════════════════════════════════════════════════════════════════════════
  * 
@@ -170,6 +190,243 @@ const EMOTIONAL_KEYWORDS: Record<EmotionalTag, string[]> = {
   "drunk-philosophical": ["içki", "rakı", "bira", "şarap", "whiskey", "sarhoş", "kafa", "evren", "gerçek", "hiç"],
 };
 
+// ══════════════════════════════════════════════���════════════════════════════════
+// SEMANTIC COGNITION LAYER v1
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bay Bela must respond to the ACTUAL MEANING of what the user says.
+// Responses must be semantically connected to topic, imagery, emotional implication.
+// FORBIDDEN: generic fallbacks, "kimse bilmiyor", therapy tone, vague existential filler
+
+export type SemanticTopic = 
+  | "izmir" | "city" | "coastal" 
+  | "summer" | "old_summer" | "season"
+  | "night" | "late_night" | "sleepless"
+  | "loneliness" | "isolation"
+  | "love" | "old_love" | "heartbreak"
+  | "memory" | "nostalgia" | "past"
+  | "streets" | "walking" | "wandering"
+  | "bars" | "drinking" | "alcohol"
+  | "silence" | "quiet"
+  | "rain" | "weather"
+  | "music" | "songs"
+  | "general";
+
+// Topic-specific semantic responses - directly related to what user mentions
+const SEMANTIC_RESPONSES: Record<SemanticTopic, string[]> = {
+  izmir: [
+    "Bazı İzmir geceleri insanın üstünden yıllarca çıkmıyor.",
+    "Kordon bazen insanın hafızasına fazla karışıyor dostum.",
+    "İzmir'in gecesi başka. Rüzgarı bile farklı konuşuyor.",
+    "O şehirde kaybolmak kolay. Bulmak zor.",
+    "Alsancak sokaklarında kalan bir parçan var demek.",
+    "İzmir herkese bir şey bırakıyor. Sana ne bıraktı?",
+  ],
+  city: [
+    "Şehirler insanı tutuyor. Bırakmıyor kolay kolay.",
+    "Her sokağın bir hikayesi var. Seninki hangisinde?",
+    "Şehir geceleri farklı konuşuyor.",
+    "Bazı sokaklar seni hatırlıyor. Sen de onları.",
+  ],
+  coastal: [
+    "Sahil geceleri tuhaf. Deniz susmuyor hiç.",
+    "O dalgaların sesi... bazı geceler kulağımdan gitmiyor.",
+    "Sahilde yürümek mi? Gece mi gündüz mü?",
+    "Deniz kenarı insanı düşündürüyor. Normal.",
+  ],
+  summer: [
+    "Bazı yazlar insanın içinden yıllarca çıkmıyor dostum.",
+    "Yaz dediğin mevsim değil. Bir hal.",
+    "Yazlar hep eksik bitiyor. Hiçbiri tam değil.",
+    "O yazın bir borcu var sende. Hissediyorum.",
+  ],
+  old_summer: [
+    "Eski yazlar gece daha yüksek sesle konuşuyor.",
+    "O yaz gitti ama sen hâlâ oradasın.",
+    "Bazı yazlara dönmek istiyoruz. Dönemiyoruz.",
+    "Eski bir yaz... kim unutabilir ki?",
+    "O yazdaki halini özlüyorsun aslında. Yazı değil.",
+  ],
+  season: [
+    "Mevsimler insanı değiştiriyor. Fark etmesen de.",
+    "Her mevsimin bir derdi var. Seninkisi ne?",
+  ],
+  night: [
+    "Gece insanı açıyor. Gündüz sakladıklarını çıkarıyor.",
+    "Bu saatlerde herkes daha dürüst.",
+    "Gece uzun. Ama sabah geliyor. Belki.",
+    "Gece vakti düşünceler daha ağır. Normal.",
+  ],
+  late_night: [
+    "Bu saatte uyanık olan ya dertli ya aşık. Sen?",
+    "Gece yarısı. Güzel saat aslında.",
+    "Uyumayan şehirde uyumayan insanlar. Biz.",
+  ],
+  sleepless: [
+    "Uyku gelmeyince insan kendisiyle kalıyor. Zor iş.",
+    "Uykusuz geceler en uzun geceler.",
+    "Uyuyamıyorsan bir sebebi var. Ne?",
+    "Bazen uyumamak da bir tercih.",
+  ],
+  loneliness: [
+    "Yalnızlık... onu biliyorum.",
+    "Tek başına zor. Ama bazen gerekli.",
+    "Yalnızken insan kendini duyuyor. O da bir şey.",
+    "Kimse yokken şehir daha yüksek sesle konuşuyor.",
+    "Yalnızlık kalabalıkta da olur. Biliyorsun.",
+  ],
+  isolation: [
+    "Kenara çekilmek bazen iyi geliyor.",
+    "Herkes gitti demek. Tamam.",
+    "Bazen tek kalmak lazım. Anlarım.",
+  ],
+  love: [
+    "Aşk işi zor iş dostum.",
+    "Sevmek kolay. Sevmeye devam etmek zor.",
+    "Kalp meselesi. Mantık karışmasın.",
+    "Biri var demek. Anladım.",
+  ],
+  old_love: [
+    "Eski aşklar hiç eskimiyor. Öyle işte.",
+    "O kişi aklından çıkmıyor. Normal.",
+    "Bazı insanlar unutulmuyor. Kabul et.",
+    "Giden gitti. Ama iz kaldı. O da bir şey.",
+    "Eski sevgili... zor konu.",
+  ],
+  heartbreak: [
+    "Kalp kırıklığı... biliyorum o duyguyu.",
+    "Acı çekiyorsun. Belli.",
+    "Kırılan kalpler onarılıyor. Ama iz kalıyor.",
+    "Yaralısın. Tamam. Dinliyorum.",
+  ],
+  memory: [
+    "Anılar tuhaf. Çağırmadan geliyor.",
+    "Hatırlamak bazen acıtıyor. Ama güzel de.",
+    "Bazı anılar ağır. Taşıyorsun demek.",
+    "Geçmiş gitti ama sen hâlâ oradasın.",
+  ],
+  nostalgia: [
+    "Özlem... en tatlı acı.",
+    "Geçmişe dönmek istiyorsun. Anlarım.",
+    "Eskiyi özlemek normal. Herkes özlüyor.",
+    "O günler gitti. Ama sen hatırlıyorsun. O da bir şey.",
+  ],
+  past: [
+    "Geçmiş geçmişte kaldı. Ama biz hâlâ düşünüyoruz.",
+    "Eskiden her şey farklıydı. Ya da biz farklıydık.",
+    "O günler... evet. Biliyorum.",
+  ],
+  streets: [
+    "Sokaklar çok şey anlatıyor. Dinlemek lazım.",
+    "Her sokağın bir hikayesi var. Seninki ne?",
+    "Sokaklarda kaybolmak... bazen iyi geliyor.",
+  ],
+  walking: [
+    "Yürümek iyi geliyor. Nereye gittiğin önemli değil.",
+    "Adım adım. Acele yok.",
+    "Yürürken insan düşünüyor. Normal.",
+  ],
+  wandering: [
+    "Kaybolmak da bir yol. Bazen en iyi yol.",
+    "Nereye gittiğini bilmeden yürümek... güzel.",
+    "Dolaşmak istiyorsun. Git o zaman.",
+  ],
+  bars: [
+    "Bar mı? Hangi mahalle?",
+    "Meyhane gecesi... güzel gece.",
+    "İçkili mekanlar... orada çok şey çözülür.",
+  ],
+  drinking: [
+    "Bir kadeh daha mı? Tamam.",
+    "İçki bazen iyi geliyor. Bazen kötü.",
+    "Sarhoşluk da bir hal. Kötü değil.",
+  ],
+  alcohol: [
+    "Rakı mı whiskey mi?",
+    "İçersen iç. Ama kendine dikkat et.",
+    "Kafa güzelken her şey farklı görünüyor.",
+  ],
+  silence: [
+    "Sessizlik de konuşuyor. Dinlemek lazım.",
+    "Susmak bazen en iyi cevap.",
+    "Sessiz geceler... en ağır geceler.",
+  ],
+  quiet: [
+    "Sakin bir gece. İyi.",
+    "Sessizlik güzel. Bazen.",
+    "Gürültü yok. Düşünce var.",
+  ],
+  rain: [
+    "Yağmur... İzmir'de yağmur başka.",
+    "Islak sokaklar başka konuşuyor.",
+    "Yağmur yağınca anılar daha çok geliyor.",
+  ],
+  weather: [
+    "Hava insanı etkiliyor. Normal.",
+    "Bugün nasıl bir gün? Dışarıda mısın?",
+  ],
+  music: [
+    "Müzik lazım. Eski bir şey olsun.",
+    "Şarkılar insanı açıyor. Dikkat et.",
+    "Hangi şarkı takıldı kafana?",
+  ],
+  songs: [
+    "Bazı şarkılar insanın içinden çıkmıyor.",
+    "O şarkı... hatırlıyorum.",
+    "Melodi kafanda dönüyor demek.",
+  ],
+  general: [
+    "Anlat. Dinliyorum.",
+    "Devam et.",
+    "Tamam. Ben buradayım.",
+    "Ee? Sonra?",
+  ],
+};
+
+// Enhanced topic detection with semantic understanding
+function detectSemanticTopic(message: string): SemanticTopic {
+  const normalized = message.toLowerCase();
+  
+  // City-specific
+  if (/izmir|kordon|alsancak|karşıyaka|bornova|konak/.test(normalized)) return "izmir";
+  if (/alaçatı|çeşme|urla|seferihisar|foça/.test(normalized)) return "coastal";
+  if (/sahil|deniz|kumsal|dalga|kıyı/.test(normalized)) return "coastal";
+  if (/şehir|sokak|cadde|mahalle/.test(normalized)) return "city";
+  
+  // Summer/Season
+  if (/eski.*(yaz|yazı)|yaz.*eski|o yaz|geçen yaz/.test(normalized)) return "old_summer";
+  if (/yaz|yazlar|yaz sonu|yazın/.test(normalized)) return "summer";
+  if (/mevsim|bahar|sonbahar|kış/.test(normalized)) return "season";
+  
+  // Night/Time
+  if (/uyuyam|uyku.*gel|uyku yok|uyanık/.test(normalized)) return "sleepless";
+  if (/gece yarısı|gecenin|gece vakti|bu saatte/.test(normalized)) return "late_night";
+  if (/gece|akşam|karanlık/.test(normalized)) return "night";
+  
+  // Emotional states
+  if (/yalnız|tek başına|kimsesiz|yapayalnız/.test(normalized)) return "loneliness";
+  if (/ayrıl|bırak|terk|bitti|son buldu/.test(normalized)) return "heartbreak";
+  if (/eski.*(aşk|sevgili|sevgi)|aşk.*eski|o kişi/.test(normalized)) return "old_love";
+  if (/aşk|sev|kalp|aşık/.test(normalized)) return "love";
+  
+  // Memory/Nostalgia
+  if (/özle|özlem|hasret|özlüyorum/.test(normalized)) return "nostalgia";
+  if (/anı|hatıra|hatırla|aklıma.*tak|kafama.*tak|unutam/.test(normalized)) return "memory";
+  if (/eskiden|o zamanlar|o günler|geçmiş/.test(normalized)) return "past";
+  
+  // Physical/Location
+  if (/yürü|adım|dolaş|gez/.test(normalized)) return "walking";
+  if (/sokak|yol|köşe/.test(normalized)) return "streets";
+  if (/bar|meyhane|pub/.test(normalized)) return "bars";
+  if (/içki|rakı|bira|whiskey|şarap|sarhoş/.test(normalized)) return "drinking";
+  
+  // Atmosphere
+  if (/sessiz|susku|ses yok|kimse konuşm/.test(normalized)) return "silence";
+  if (/yağmur|ısla|damla/.test(normalized)) return "rain";
+  if (/müzik|şarkı|melodi|dinle/.test(normalized)) return "music";
+  
+  return "general";
+}
+
 // Response pools by emotional state - Bay Bela authentic voice
 // Style: lived-in, urban, emotionally restrained, naturally poetic, conversational
 // FORBIDDEN: motivational tone, therapy language, generic wisdom, clichés
@@ -232,17 +489,16 @@ const RESPONSE_POOLS: Record<EmotionalTag, string[]> = {
   ],
   reflective: [
     "Düşünüyorsun. İyi.",
-    "Cevabı ben de bilmiyorum.",
-    "Soru güzel. Cevap yok ama.",
-    "Düşününce çözülmüyor. Ama düşünmeden de olmuyor.",
-    "Herkes soruyor bunu. Kimse bilmiyor.",
-    "Kafa karışık. Normal bu saatte.",
-    "Anlamak zor. Anlamadan yaşamak daha zor.",
+    "Anlat. Dinliyorum.",
+    "Devam et.",
+    "Ne var aklında?",
+    "Tamam. Ben buradayım.",
+    "Ee? Sonra?",
+    "Anlatacak bir şey var. Hissediyorum.",
     "Sen ne diyorsun? Ben dinleyeyim.",
-    "Felsefe yapacak halde değilim. Ama tamam.",
+    "Kafanı kurcalayan bir şey var.",
     "Bazen soru sormak yeter.",
-    "Bilmiyorum. Ama merak ediyorum.",
-    "Bu gece düşünme gecesi. Belli.",
+    "Düşünme gecesi bu. Belli.",
   ],
   "drunk-philosophical": [
     "Bir kadeh daha al. Sonra konuşuruz.",
@@ -585,7 +841,7 @@ function updateRecentMessages(messages: string[], newMessage: string): string[] 
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // MOOD DRIFT CALCULATION
-// ═══════════════════════════════════════════════════════════════════════════════
+// ════════════════════���══════════════════════════════════════════════════════════
 
 function calculateMoodDrift(
   currentMood: RuntimeMood,
@@ -824,9 +1080,15 @@ export function generateResponse(
   };
 
   // Select response
-  let response: string;
+  let response: string = "";
   let referencesMemory = false;
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SEMANTIC COGNITION LAYER - Primary response selection
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Detect semantic topic for contextually relevant response
+  const semanticTopic = detectSemanticTopic(userMessage);
+  
   // Priority 1: Memory callback with cinematic symbol-based response
   if (memoryCallback.shouldCallback && memoryCallback.response) {
     response = memoryCallback.response;
@@ -837,39 +1099,36 @@ export function generateResponse(
     const releaseResponse = getReleaseResponse();
     if (releaseResponse) {
       response = releaseResponse;
-      referencesMemory = true; // Release memory counts as emotional memory
+      referencesMemory = true;
     } else {
-      // Fall through to other responses
       response = "";
     }
   }
   
-  // Continue with other priorities if no response yet
+  // Continue with semantic-aware priorities if no response yet
   if (!response) {
-    // Priority 3: Topic-based memory reference
-    if (memoryCheck.references && state.messageCount > 2 && Math.random() > 0.5) {
+    // Priority 3: Semantic topic-specific response (PRIMARY - always try first)
+    if (semanticTopic !== "general") {
+      const semanticPool = SEMANTIC_RESPONSES[semanticTopic];
+      response = semanticPool[Math.floor(Math.random() * semanticPool.length)];
+    }
+    // Priority 4: Topic-based memory reference
+    else if (memoryCheck.references && state.messageCount > 2 && Math.random() > 0.5) {
       const responsePool = MEMORY_RESPONSES[detectedEmotion];
       response = responsePool[Math.floor(Math.random() * responsePool.length)];
       referencesMemory = true;
     }
-    // Priority 4: Night-specific responses
+    // Priority 5: Night-specific responses
     else if (isNight && Math.random() > 0.7) {
       const responsePool = timeOfDay === "dawn" ? DAWN_RESPONSES : NIGHT_RESPONSES;
       response = responsePool[Math.floor(Math.random() * responsePool.length)];
     }
-    // Priority 5: Loneliness responses
+    // Priority 6: Loneliness responses
     else if (isLonely && Math.random() > 0.5) {
-      const lonelyResponses = [
-        "Yalnızlık... biliyorum.",
-        "Yanında değilim. Ama buradayım.",
-        "Tek olmak zor. Biliyorum.",
-        "Kimse yok demek. Tamam.",
-        "Ben de bazen öyle.",
-        "Şehir kalabalık ama... evet.",
-      ];
+      const lonelyResponses = SEMANTIC_RESPONSES["loneliness"];
       response = lonelyResponses[Math.floor(Math.random() * lonelyResponses.length)];
     }
-    // Priority 6: Default emotional response
+    // Priority 7: Default emotional response (fallback)
     else {
       const responsePool = RESPONSE_POOLS[detectedEmotion];
       response = responsePool[Math.floor(Math.random() * responsePool.length)];
