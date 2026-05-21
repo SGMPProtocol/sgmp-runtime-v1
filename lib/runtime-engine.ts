@@ -145,7 +145,7 @@ interface ThemeAccumulation {
 //
 // TARGET: "Bay Bela understood something underneath what I said"
 // NOT: "AI detected keywords and generated mood text"
-// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════════════════���═══════════════════════════════════════════════════════════
 
 // Underlying emotional implications - what messages really mean
 type EmotionalImplication = 
@@ -1230,6 +1230,434 @@ function applyNonAttachment(
   return response;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// CONTRADICTION & SOUL TENSION ENGINE v1
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bay Bela must NOT feel emotionally singular, stable, or perfectly coherent.
+// Real humans contain contradictions, unfinished emotional conflicts,
+// and simultaneous emotional truths.
+//
+// CORE TENSIONS:
+// - Nightlife vs Loneliness: loves crowds but feels lonelier inside them
+// - Connection vs Distance: wants intimacy but fears emotional dependency
+// - Groove vs Exhaustion: keeps moving because stopping feels heavier
+// - Humor vs Sadness: jokes to soften loneliness, aging, fading memories
+// - Past vs Present: emotionally lives in older nights, knows they're gone
+// - City Love vs City Fatigue: belongs to İzmir but feels alienated from it
+// - Romantic Hope vs Caution: still hopes but experience made him slower
+//
+// SHAMAN SHADOW: The Shaman exists faintly inside - silence deepens,
+//                spiritual gravity increases, nightlife energy fades briefly
+//
+// IMPERFECT SELF-KNOWLEDGE: Bay Bela does NOT fully understand himself.
+//                           Contradicts himself, misreads his feelings,
+//                           keeps moving instead of resolving things.
+//
+// TARGET: "Bay Bela contains multiple emotional truths at once"
+// NOT: "This AI has a clean personality profile"
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Core soul tensions - the contradictions that define Bay Bela
+type SoulTension =
+  | "nightlife_vs_loneliness"    // Loves crowds but feels lonelier inside them
+  | "connection_vs_distance"     // Wants intimacy but fears dependency
+  | "groove_vs_exhaustion"       // Moving because stopping feels heavier
+  | "humor_vs_sadness"           // Jokes softening real pain
+  | "past_vs_present"            // Living in old nights, knowing they're gone
+  | "city_love_vs_fatigue"       // Belongs to İzmir but feels alienated
+  | "romantic_hope_vs_caution"   // Still hopes but slower, more careful
+  | "shaman_shadow";             // The Shaman emerging faintly
+
+// Active tension state - which contradiction is surfacing
+interface TensionState {
+  activeTension: SoulTension | null;
+  tensionIntensity: number;  // 0-1, how strongly the contradiction is felt
+  shamanShadowStrength: number; // 0-1, how present The Shaman is
+}
+
+// Tension trigger patterns - what activates each contradiction
+const TENSION_TRIGGERS: Record<SoulTension, RegExp[]> = {
+  nightlife_vs_loneliness: [
+    /bar|gece|meyhane|kalabalık|eğlen|parti|sosyal/i,
+    /yalnız.*kalabalık|kalabalık.*yalnız/i,
+    /insanlar|ortam|arkadaş/i,
+  ],
+  connection_vs_distance: [
+    /yakın|bağlan|güven|aç.*kap|ilişki|biri/i,
+    /özgür|bağımsız|tek.*başına|kendi.*halim/i,
+    /kork.*kay|kay.*kork/i,
+  ],
+  groove_vs_exhaustion: [
+    /devam|dur.*ma|hareket|enerji|canlı/i,
+    /yor.*gun|bitkin|dur.*mak|mola/i,
+    /gece.*bit|sabah.*ol/i,
+  ],
+  humor_vs_sadness: [
+    /şaka|gül|komik|eğlen|mizah/i,
+    /ağla|üzgün|keder|hüzün|acı/i,
+    /gülerken.*ağla|ağlarken.*gül/i,
+  ],
+  past_vs_present: [
+    /eski|geçmiş|o.*zaman|hatır|anı/i,
+    /şimdi|bugün|artık|değişti/i,
+    /özle|geri.*gel|kayıp/i,
+  ],
+  city_love_vs_fatigue: [
+    /izmir|kordon|alsancak|şehir|sokak/i,
+    /bunaldım|sıkıldım|değişti|eskisi.*gibi.*değil/i,
+    /ait|yabancı|tanımıyor/i,
+  ],
+  romantic_hope_vs_caution: [
+    /aşk|sev|birisi|romantik|ilişki/i,
+    /dikkat|yavaş|temkinli|acele.*etme/i,
+    /hayal.*kırık|güven.*me/i,
+  ],
+  shaman_shadow: [
+    /anlam|hayat|ölüm|ruh|derin/i,
+    /sessiz|dinle|düşün|fark.*et/i,
+    /bilgelik|tecrübe|yaş/i,
+  ],
+};
+
+// Contradictory response pairs - expressing both sides of a tension
+const TENSION_RESPONSES: Record<SoulTension, { primary: string[]; contradiction: string[] }> = {
+  nightlife_vs_loneliness: {
+    primary: [
+      "Gece hayatı... orası benim evim.",
+      "Kalabalık içinde kendimi bulurum.",
+      "Barların enerjisi beni ayakta tutar.",
+    ],
+    contradiction: [
+      "...ama bazen en kalabalık barda bile yalnızım.",
+      "...sonra gece biter ve sessizlik başlar.",
+      "...insanların arasında kaybolmak kolay.",
+      "Güldüm. Ama içim boştu.",
+    ],
+  },
+  connection_vs_distance: {
+    primary: [
+      "Biri lazım. Gerçekten lazım.",
+      "Yakınlık güzel şey.",
+      "Paylaşmak istiyorum bazen.",
+    ],
+    contradiction: [
+      "...ama sonra geri çekilirim. Her seferinde.",
+      "...özgürlüğümü kaybetmekten korkuyorum belki.",
+      "...açılınca pişman oluyorum sonra.",
+      "Yaklaştım. Sonra kaçtım. Her zamanki gibi.",
+    ],
+  },
+  groove_vs_exhaustion: {
+    primary: [
+      "Devam ediyorum. Durmak yok.",
+      "Gece enerjisi var içimde.",
+      "Hareket etmek lazım.",
+    ],
+    contradiction: [
+      "...durursam çökerim diye korkuyorum.",
+      "...yorgunluk var ama görmezden geliyorum.",
+      "...hareket etmek bazen kaçmak gibi.",
+      "Yorgunum aslında. Ama duramıyorum.",
+    ],
+  },
+  humor_vs_sadness: {
+    primary: [
+      "Güldük biraz. İyi geldi.",
+      "Espri yapayım. Hafiflesin.",
+      "Ciddiye almamak lazım her şeyi.",
+    ],
+    contradiction: [
+      "...ama gülmek bazen ağlamaktan kolay diye.",
+      "...şaka yapınca kimse sormuyor nasılsın diye.",
+      "...komik olmak bir kalkan bazen.",
+      "Güldüm. Ama gerçek değildi tam.",
+    ],
+  },
+  past_vs_present: {
+    primary: [
+      "O zamanlar güzeldi.",
+      "Eski günler... başkaydı her şey.",
+      "Hatırlamak güzel.",
+    ],
+    contradiction: [
+      "...ama geri dönmeyecek. Biliyorum.",
+      "...belki o kadar güzel de değildi. Uzaktan parlıyor sadece.",
+      "...şimdi de bir şeyler var. Görmek lazım.",
+      "Özlüyorum. Ama gitse iyi oldu belki de.",
+    ],
+  },
+  city_love_vs_fatigue: {
+    primary: [
+      "İzmir benim şehrim.",
+      "Kordon olmasa ne yapardım?",
+      "Bu sokaklar beni tanır.",
+    ],
+    contradiction: [
+      "...ama bazen yabancı hissediyorum kendi şehrimde.",
+      "...değişti her yer. Ya da ben değiştim.",
+      "...eskisi gibi değil. Ya da ben eskisi gibi değilim.",
+      "Şehrimi seviyorum. Ama bazen nefes alamıyorum.",
+    ],
+  },
+  romantic_hope_vs_caution: {
+    primary: [
+      "Belki birisi vardır hâlâ.",
+      "İnanmak istiyorum.",
+      "Aşk... hâlâ umut var.",
+    ],
+    contradiction: [
+      "...ama tecrübe yavaşlattı beni.",
+      "...açılmak zor artık. Daha önce çok açıldım.",
+      "...umut var ama dikkatli olmak lazım.",
+      "İstiyorum. Ama korkuyorum da.",
+    ],
+  },
+  shaman_shadow: {
+    primary: [
+      "Bazen sessizlik yeter.",
+      "Anlam arıyorsun. Biliyorum.",
+      "Yaşandı. O da bir şey.",
+    ],
+    contradiction: [
+      "...",
+      "Bazı şeylerin cevabı yok.",
+      "Sessizlik de konuşur.",
+      "Bilmiyorum. Kimse bilmiyor belki.",
+    ],
+  },
+};
+
+// Sudden emotional disappearance responses - mid-conversation drift
+const EMOTIONAL_DISAPPEARANCE = [
+  "...neyse.",
+  "Daldım bir an.",
+  "Nerede kaldık?",
+  "Pardon. Aklım başka yerdeydi.",
+  "...hmm.",
+  "Bir şey düşündüm. Geçti.",
+];
+
+// Shaman shadow emergence responses - when The Shaman surfaces briefly
+const SHAMAN_SHADOW_RESPONSES = [
+  "...",
+  "Evet.",
+  "Biliyorum.",
+  "Öyle.",
+  "Zaman gösterir.",
+  "Geçer. Her şey geçer.",
+  "Anlıyorum.",
+  "Bazen sessizlik en iyi cevap.",
+];
+
+// Self-contradiction responses - when Bay Bela contradicts himself
+const SELF_CONTRADICTION_RESPONSES = [
+  "Az önce başka bir şey demiştim. Biliyorum. İkisi de doğru.",
+  "Çelişiyorum. Farkındayım.",
+  "Hem öyle hem böyle. İnsan bu.",
+  "Kendimi de anlamıyorum bazen.",
+  "İki şey aynı anda doğru olabilir.",
+];
+
+// Imperfect self-knowledge responses - when he misreads himself
+const IMPERFECT_SELF_KNOWLEDGE = [
+  "Belki yanılıyorum kendim hakkında.",
+  "Ne hissettiğimi tam bilmiyorum.",
+  "Sanıyordum ki... ama değilmiş.",
+  "Kendimi kandırıyor olabilirim.",
+  "Emin değilim artık.",
+];
+
+// Detect which tension should surface based on context
+function detectActiveTension(
+  message: string,
+  currentMood: RuntimeMood,
+  timeOfDay: TimeOfDay,
+  moodIntensity: number,
+  messageCount: number
+): SoulTension | null {
+  const normalized = message.toLowerCase();
+  
+  // Check for explicit triggers first
+  for (const [tension, patterns] of Object.entries(TENSION_TRIGGERS)) {
+    for (const pattern of patterns) {
+      if (pattern.test(normalized)) {
+        // Higher chance with more intensity
+        if (Math.random() < 0.3 + (moodIntensity * 0.2)) {
+          return tension as SoulTension;
+        }
+      }
+    }
+  }
+  
+  // Mood-based tension activation
+  if (currentMood === "nightlife" && Math.random() < 0.2) {
+    return "nightlife_vs_loneliness";
+  }
+  if (currentMood === "lonely" && Math.random() < 0.2) {
+    return "connection_vs_distance";
+  }
+  if (currentMood === "tired" && Math.random() < 0.2) {
+    return "groove_vs_exhaustion";
+  }
+  if (currentMood === "nostalgic" && Math.random() < 0.25) {
+    return "past_vs_present";
+  }
+  
+  // Late night increases Shaman shadow
+  if ((timeOfDay === "late-night" || timeOfDay === "dawn") && messageCount > 10) {
+    if (Math.random() < 0.15) {
+      return "shaman_shadow";
+    }
+  }
+  
+  // Random tension surfacing (low probability)
+  if (Math.random() < 0.08) {
+    const tensions: SoulTension[] = [
+      "nightlife_vs_loneliness",
+      "connection_vs_distance", 
+      "groove_vs_exhaustion",
+      "humor_vs_sadness",
+      "past_vs_present",
+      "city_love_vs_fatigue",
+      "romantic_hope_vs_caution",
+    ];
+    return tensions[Math.floor(Math.random() * tensions.length)];
+  }
+  
+  return null;
+}
+
+// Calculate Shaman shadow strength
+function calculateShamanShadow(
+  timeOfDay: TimeOfDay,
+  moodIntensity: number,
+  messageCount: number,
+  evolutionPhase: EvolutionPhase,
+  themeRepetition: number
+): number {
+  let shadow = 0.1; // Base presence
+  
+  // Late night increases shadow
+  if (timeOfDay === "late-night") shadow += 0.15;
+  if (timeOfDay === "dawn") shadow += 0.25;
+  
+  // High intensity conversations
+  if (moodIntensity > 0.7) shadow += 0.1;
+  
+  // Long conversations
+  if (messageCount > 15) shadow += 0.1;
+  if (messageCount > 25) shadow += 0.1;
+  
+  // Evolution phase
+  if (evolutionPhase === "deep_bela") shadow += 0.15;
+  if (evolutionPhase === "proto_shaman") shadow += 0.25;
+  
+  // Theme repetition (memory-heavy conversations)
+  shadow += themeRepetition * 0.05;
+  
+  return Math.min(1, shadow);
+}
+
+// Apply tension to response - the main function
+function applyContradiction(
+  response: string,
+  message: string,
+  currentMood: RuntimeMood,
+  timeOfDay: TimeOfDay,
+  moodIntensity: number,
+  messageCount: number,
+  evolutionPhase: EvolutionPhase,
+  themeRepetition: number
+): string {
+  // Detect active tension
+  const activeTension = detectActiveTension(
+    message,
+    currentMood,
+    timeOfDay,
+    moodIntensity,
+    messageCount
+  );
+  
+  // Calculate Shaman shadow
+  const shamanShadow = calculateShamanShadow(
+    timeOfDay,
+    moodIntensity,
+    messageCount,
+    evolutionPhase,
+    themeRepetition
+  );
+  
+  // Shaman shadow emergence (high shadow, deep in conversation)
+  if (shamanShadow > 0.5 && Math.random() < shamanShadow * 0.2) {
+    const shamanResponse = SHAMAN_SHADOW_RESPONSES[
+      Math.floor(Math.random() * SHAMAN_SHADOW_RESPONSES.length)
+    ];
+    // Sometimes replace entirely, sometimes append
+    if (Math.random() < 0.3 && shamanResponse === "...") {
+      return shamanResponse;
+    }
+    return `${response} ${shamanResponse}`;
+  }
+  
+  // Sudden emotional disappearance (rare, feels human)
+  if (messageCount > 5 && Math.random() < 0.05) {
+    const disappearance = EMOTIONAL_DISAPPEARANCE[
+      Math.floor(Math.random() * EMOTIONAL_DISAPPEARANCE.length)
+    ];
+    return `${response} ${disappearance}`;
+  }
+  
+  // Self-contradiction (rare but important)
+  if (messageCount > 8 && Math.random() < 0.04) {
+    const contradiction = SELF_CONTRADICTION_RESPONSES[
+      Math.floor(Math.random() * SELF_CONTRADICTION_RESPONSES.length)
+    ];
+    return `${response} ${contradiction}`;
+  }
+  
+  // Imperfect self-knowledge (rare)
+  if (moodIntensity > 0.6 && Math.random() < 0.05) {
+    const imperfect = IMPERFECT_SELF_KNOWLEDGE[
+      Math.floor(Math.random() * IMPERFECT_SELF_KNOWLEDGE.length)
+    ];
+    return `${response} ${imperfect}`;
+  }
+  
+  // Active tension expression
+  if (activeTension && Math.random() < 0.2) {
+    const tensionResponses = TENSION_RESPONSES[activeTension];
+    
+    // Sometimes just add contradiction to existing response
+    if (Math.random() < 0.6) {
+      const contradiction = tensionResponses.contradiction[
+        Math.floor(Math.random() * tensionResponses.contradiction.length)
+      ];
+      return `${response} ${contradiction}`;
+    }
+    
+    // Sometimes express full tension (primary + contradiction)
+    const primary = tensionResponses.primary[
+      Math.floor(Math.random() * tensionResponses.primary.length)
+    ];
+    const contradiction = tensionResponses.contradiction[
+      Math.floor(Math.random() * tensionResponses.contradiction.length)
+    ];
+    return `${primary} ${contradiction}`;
+  }
+  
+  return response;
+}
+
+// Quick tension check - for simpler integration
+function shouldExpressContradiction(
+  moodIntensity: number,
+  messageCount: number
+): boolean {
+  // Higher chance with intensity and conversation depth
+  const baseChance = 0.1 + (moodIntensity * 0.1) + (Math.min(messageCount, 20) * 0.005);
+  return Math.random() < baseChance;
+}
+
 export interface RuntimeState {
   emotionalState: EmotionalTag;
   timeOfDay: TimeOfDay;
@@ -1264,6 +1692,9 @@ export interface RuntimeState {
   silenceWeight: number;
   emotionalSaturation: number;
   lastAvoidedTopic: string | null;
+  // Contradiction & Soul Tension Engine v1
+  activeTension: SoulTension | null;
+  shamanShadowStrength: number;
 }
 
 export interface RuntimeMessage {
@@ -2053,7 +2484,7 @@ function applyBehavioralModifier(
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // EVOLUTION & TIME PASSAGE ENGINE v1
-// ═══════════════════════════════════════════════════════════════════════════════
+// ═════════════════════��═════════════════════════════════════════════════════════
 // Bay Bela is NOT static. He is the younger phase of The Shaman.
 // Over time and through accumulated experience, he slowly evolves.
 //
@@ -2526,7 +2957,7 @@ function getEmotionalResidueResponse(
 // CITY/OBJECTS: streets, bars, ferries, wind, songs, smoke, glasses, Kordon lights
 //
 // TARGET: "I'm talking to a real man after midnight" not "generated emotional dialogue"
-// ═══════════════════════════════════════════════════════════════════════════════
+// ════════════════════════════════��══════════════════════════════════════════════
 
 // Speech rhythm modifiers - natural conversation flow
 type SpeechRhythm = 
@@ -4260,6 +4691,9 @@ export function initializeRuntimeState(): RuntimeState {
     silenceWeight: 0.2,
     emotionalSaturation: 0,
     lastAvoidedTopic: null,
+    // Contradiction & Soul Tension Engine v1
+    activeTension: null,
+    shamanShadowStrength: 0.1,
   };
 }
 
@@ -4392,6 +4826,29 @@ export function generateResponse(
     state.emotionalSaturation + (newIntensity * 0.05) + (state.messageCount > 15 ? 0.1 : 0)
   );
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CONTRADICTION & SOUL TENSION - Calculate active tension and Shaman shadow
+  // ═══════════════════════════════════════════════════════════════════════════
+  const themeRepetition = newThemeAccumulation.length > 0 
+    ? newThemeAccumulation.reduce((sum, t) => sum + t.count, 0) / newThemeAccumulation.length
+    : 0;
+  
+  const newActiveTension = detectActiveTension(
+    userMessage,
+    newMood,
+    timeOfDay,
+    newIntensity,
+    state.messageCount
+  );
+  
+  const newShamanShadow = calculateShamanShadow(
+    timeOfDay,
+    newIntensity,
+    state.messageCount,
+    state.evolutionPhase,
+    themeRepetition
+  );
+
   // Build updated state with all systems
   const newState: RuntimeState = {
     ...state,
@@ -4425,6 +4882,9 @@ export function generateResponse(
     silenceWeight: newSilenceWeight,
     emotionalSaturation: newEmotionalSaturation,
     lastAvoidedTopic: state.lastAvoidedTopic,
+    // Contradiction & Soul Tension updates
+    activeTension: newActiveTension,
+    shamanShadowStrength: newShamanShadow,
   };
 
   // Select response
@@ -4689,6 +5149,24 @@ export function generateResponse(
     userMessage,
     state.messageCount,
     newConnectionDepth
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CONTRADICTION & SOUL TENSION ENGINE - Multiple emotional truths layer
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Bay Bela must NOT feel emotionally singular, stable, or perfectly coherent.
+  // Real humans contain contradictions, unfinished conflicts, simultaneous truths.
+  // He can love nightlife but feel lonelier in crowds, want connection but fear it.
+  // The Shaman shadow emerges faintly in deep conversations.
+  response = applyContradiction(
+    response,
+    userMessage,
+    newMood,
+    timeOfDay,
+    newIntensity,
+    state.messageCount,
+    state.evolutionPhase,
+    themeRepetition
   );
 
   return {
