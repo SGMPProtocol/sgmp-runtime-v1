@@ -47,8 +47,13 @@ const INITIAL_MESSAGES: Message[] = [
 const LOCAL_SESSION_ID = "local-prototype-session";
 
 export function RuntimeChat() {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ISOLATED DRAFT STATE - NOTHING ELSE MAY WRITE TO THIS
+  // ═══════════════════════════════════════════════════════════════════════════
+  const [draftMessage, setDraftMessage] = useState("");
+  
+  // Other state (completely separate from draft)
   const [messages, setMessages] = useState<Message[]>(INITIAL_MESSAGES);
-  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string>(LOCAL_SESSION_ID);
   const [isConnected, setIsConnected] = useState(false);
@@ -56,6 +61,7 @@ export function RuntimeChat() {
   const [runtimeState, setRuntimeState] = useState<RuntimeState>(initializeRuntimeState);
   const [showMemoryPulse, setShowMemoryPulse] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Enable interaction immediately on mount
   useEffect(() => {
@@ -77,7 +83,6 @@ export function RuntimeChat() {
             messagesResult.messages &&
             messagesResult.messages.length > 0
           ) {
-            console.log("[v0] LOADED_FROM_SUPABASE:", JSON.stringify(messagesResult.messages.map((m: { content: string }) => m.content)));
             const loadedMessages = messagesResult.messages.map(
               (msg: { role: "user" | "assistant"; content: string }) => ({
                 role: msg.role,
@@ -99,93 +104,58 @@ export function RuntimeChat() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const canSend = isReady && input.trim().length > 0 && !isLoading;
-
-  async function handleSend() {
-    if (!canSend) return;
-
-    // ═══════════════════════════════════════════════════════════════════
-    // CRITICAL: RAW USER INPUT PRESERVATION
-    // The value captured here is SACRED and must NEVER be transformed
-    // ═══════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SUBMIT HANDLER - CAPTURES RAW DRAFT, THEN CLEARS DRAFT
+  // ═══════════════════════════════════════════════════════════════════════════
+  async function handleSubmit() {
+    // Step 1: Capture the EXACT raw user message from draft
+    const rawUserMessage = draftMessage;
     
-    // Step 1: Capture EXACT raw input from the text field
-    const RAW_USER_INPUT: string = input;
+    // Step 2: Validate - do nothing if empty
+    if (!rawUserMessage.trim()) return;
+    if (isLoading) return;
     
-    // Step 2: Create immutable copy for display (frozen to prevent mutation)
-    const DISPLAYED_MESSAGE: string = String(RAW_USER_INPUT);
-    
-    // Step 3: Create separate copy ONLY for keyword analysis
-    const NORMALIZED_INPUT: string = RAW_USER_INPUT.toLowerCase();
-    
-    // Debug logging - trace exact values through the flow
-    console.log("[v0] ════════════════════════════════════════");
-    console.log("[v0] RAW_USER_INPUT:", JSON.stringify(RAW_USER_INPUT));
-    console.log("[v0] RAW_USER_INPUT length:", RAW_USER_INPUT.length);
-    console.log("[v0] RAW_USER_INPUT charCodes:", Array.from(RAW_USER_INPUT).map(c => c.charCodeAt(0)));
-    console.log("[v0] DISPLAYED_MESSAGE:", JSON.stringify(DISPLAYED_MESSAGE));
-    console.log("[v0] NORMALIZED_INPUT (analysis only):", JSON.stringify(NORMALIZED_INPUT));
-    console.log("[v0] ════════════════════════════════════════");
-    
-    // Clear input AFTER capturing
-    setInput("");
+    // Step 3: Clear draft IMMEDIATELY after capture (only place we clear it)
+    setDraftMessage("");
     setIsLoading(true);
 
-    // Generate response using runtime engine
-    // NOTE: generateResponse receives the raw message for ANALYSIS ONLY
-    // It returns a response but NEVER modifies or returns the user message
-    const { response, newState, referencesMemory, emotionalTag } = generateResponse(
-      RAW_USER_INPUT, // Pass raw for analysis, but we display DISPLAYED_MESSAGE
+    // Step 4: Generate Bay Bela response (this NEVER touches draftMessage)
+    const { response: bayBelaResponse, newState, referencesMemory, emotionalTag } = generateResponse(
+      rawUserMessage,
       runtimeState
     );
 
-    // Update runtime state
+    // Step 5: Update runtime state
     setRuntimeState(newState);
 
-    // Create the user message object with DISPLAYED_MESSAGE (unmodified raw input)
-    const userMessageObject: Message = { 
-      role: "user", 
-      content: DISPLAYED_MESSAGE // MUST be the exact raw input
-    };
-    
-    // Integrity check: verify message was not mutated
-    if (userMessageObject.content !== RAW_USER_INPUT) {
-      console.error("[v0] CRITICAL: Message was mutated!");
-      console.error("[v0] Original:", JSON.stringify(RAW_USER_INPUT));
-      console.error("[v0] Mutated:", JSON.stringify(userMessageObject.content));
-    }
-    
-    console.log("[v0] STORED_MESSAGE:", JSON.stringify(userMessageObject.content));
+    // Step 6: Append raw user message to chat (EXACT text user typed)
+    setMessages((prev) => [...prev, { role: "user", content: rawUserMessage }]);
 
-    // Add user message to state - this is what gets rendered
-    setMessages((prev) => [...prev, userMessageObject]);
-
-    // Calculate thinking delay based on emotional complexity
+    // Step 7: Thinking delay
     const thinkingDelay = getThinkingDelay(newState.emotionalState);
     await new Promise((resolve) => setTimeout(resolve, thinkingDelay));
 
-    // Show memory pulse if referencing past conversation
+    // Step 8: Memory pulse effect
     if (referencesMemory) {
       setShowMemoryPulse(true);
       setTimeout(() => setShowMemoryPulse(false), 3000);
     }
 
-    // Try Supabase logging with EXACT raw message, but don't block on failure
+    // Step 9: Save to Supabase (raw user message only)
     if (isConnected && sessionId !== LOCAL_SESSION_ID) {
       try {
-        console.log("[v0] SUPABASE_STORING:", JSON.stringify(DISPLAYED_MESSAGE));
-        await sendRuntimeMessage(sessionId, DISPLAYED_MESSAGE, "bay-bela");
+        await sendRuntimeMessage(sessionId, rawUserMessage, "bay-bela");
       } catch {
-        // Supabase failed, continue with local response
+        // Supabase failed, continue
       }
     }
 
-    // Add assistant response
+    // Step 10: Append Bay Bela response to chat
     setMessages((prev) => [
       ...prev,
       {
         role: "assistant",
-        content: response,
+        content: bayBelaResponse,
         emotionalTag,
         referencesMemory,
       },
@@ -194,13 +164,21 @@ export function RuntimeChat() {
     setIsLoading(false);
   }
 
-  function handleKeyDown(e: React.KeyboardEvent) {
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      handleSubmit();
     }
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // TEXTAREA CHANGE HANDLER - ONLY THING THAT WRITES TO DRAFT
+  // ═══════════════════════════════════════════════════════════════════════════
+  function handleDraftChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    setDraftMessage(e.target.value);
+  }
+
+  const canSend = isReady && draftMessage.trim().length > 0 && !isLoading;
   const emotionalStateLabel = getEmotionalTagLabel(runtimeState.emotionalState);
 
   return (
@@ -264,12 +242,7 @@ export function RuntimeChat() {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto space-y-4 pr-2 scrollbar-thin">
-        {messages.map((message, index) => {
-          // Log what is actually being rendered
-          if (message.role === "user") {
-            console.log("[v0] RENDERING_USER_MESSAGE:", JSON.stringify(message.content));
-          }
-          return (
+        {messages.map((message, index) => (
           <div
             key={index}
             className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-300`}
@@ -309,8 +282,7 @@ export function RuntimeChat() {
               <p className="text-sm leading-relaxed">{message.content}</p>
             </div>
           </div>
-          );
-        })}
+        ))}
 
         {/* Typing indicator */}
         {isLoading && (
@@ -333,26 +305,30 @@ export function RuntimeChat() {
 
       {/* Input */}
       <div className="mt-6 pt-4 border-t border-[hsl(var(--border))]">
-        <div className="flex items-center gap-3">
+        <div className="flex items-start gap-3">
           <div className="flex-1 relative">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
+            <textarea
+              ref={textareaRef}
+              value={draftMessage}
+              onChange={handleDraftChange}
               onKeyDown={handleKeyDown}
               placeholder={isReady ? "Mesaj yaz..." : "Yükleniyor..."}
               disabled={!isReady || isLoading}
+              rows={1}
               autoComplete="off"
               autoCorrect="off"
               autoCapitalize="off"
               spellCheck={false}
               data-form-type="other"
-              className="w-full px-4 py-3 rounded-xl bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:border-[hsl(var(--accent))] focus:shadow-[0_0_0_2px_rgba(59,130,246,0.1)] transition-all disabled:opacity-50"
+              data-lpignore="true"
+              data-1p-ignore="true"
+              className="w-full px-4 py-3 rounded-xl bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--muted-foreground))] focus:outline-none focus:border-[hsl(var(--accent))] focus:shadow-[0_0_0_2px_rgba(59,130,246,0.1)] transition-all disabled:opacity-50 resize-none"
+              style={{ minHeight: "48px", maxHeight: "120px" }}
             />
           </div>
           <button
             type="button"
-            onClick={handleSend}
+            onClick={handleSubmit}
             disabled={!canSend}
             className="px-5 py-3 rounded-xl bg-[hsl(var(--accent))] text-white font-medium text-sm hover:bg-[hsl(220,70%,50%)] focus:outline-none focus:ring-2 focus:ring-[hsl(var(--accent))] focus:ring-offset-2 focus:ring-offset-[hsl(var(--card))] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_20px_rgba(59,130,246,0.2)] hover:shadow-[0_0_30px_rgba(59,130,246,0.3)]"
           >
@@ -371,6 +347,13 @@ export function RuntimeChat() {
             </svg>
           </button>
         </div>
+
+        {/* Debug: Raw Draft Display (development only) */}
+        {process.env.NODE_ENV === "development" && draftMessage && (
+          <div className="mt-2 px-2 py-1 bg-yellow-500/10 border border-yellow-500/30 rounded text-[10px] font-mono text-yellow-400 break-all">
+            RAW DRAFT: {draftMessage}
+          </div>
+        )}
 
         {/* Runtime Status Footer */}
         <div className="mt-3 flex items-center justify-center gap-4 text-[10px] uppercase tracking-widest text-[hsl(var(--muted-foreground))]">
