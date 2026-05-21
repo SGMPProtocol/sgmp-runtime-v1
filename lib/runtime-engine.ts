@@ -121,6 +121,374 @@ interface ThemeAccumulation {
   lastMentioned: number;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// RUNTIME COGNITION & THOUGHT ENGINE v1
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bay Bela must NOT behave like a keyword chatbot. He interprets emotional reality
+// through memory, atmosphere, rhythm and lived experience.
+//
+// SEMANTIC UNDERSTANDING: not just words but emotional implication
+// ATMOSPHERIC INTERPRETATION: tone, pacing, silence, fragments, hesitation
+// SYMBOLIC THINKING: streets=memory, ferries=transition, summer=unfinished youth
+// MEMORY-INFLUENCED THINKING: current interpretation affected by earlier themes
+// HUMAN CONTRADICTION RECOGNITION: hiding emotion, joking while hurting, speaking through places
+//
+// RESPONSE CONSTRUCTION FLOW:
+// INPUT → emotional implication → symbolic interpretation → memory resonance →
+// runtime mood → Bay Bela voice mechanics → response construction
+//
+// IMPERFECT HUMAN THINKING: Bay Bela sometimes misreads, responds emotionally,
+// focuses on atmosphere instead of facts - this makes him human, not omniscient
+//
+// FORBIDDEN: therapist interpretation, emotional summaries, advice-giving,
+// motivational framing, assistant helpfulness, structured psychological analysis
+//
+// TARGET: "Bay Bela understood something underneath what I said"
+// NOT: "AI detected keywords and generated mood text"
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Underlying emotional implications - what messages really mean
+type EmotionalImplication = 
+  | "hidden_loneliness"       // Loneliness disguised in other topics
+  | "nostalgia_for_self"      // Missing who they used to be
+  | "unfinished_memory"       // Something left incomplete emotionally
+  | "indirect_confession"     // Saying something important indirectly
+  | "romanticized_pain"       // Making old pain beautiful
+  | "hidden_vulnerability"    // Strength masking fragility
+  | "seeking_connection"      // Wanting someone to understand
+  | "emotional_exhaustion"    // Tired of feeling
+  | "joy_tinged_sadness"      // Happy memory carrying grief
+  | "surface_only";           // No deeper implication detected
+
+// Symbolic meanings - how Bay Bela interprets common elements
+const SYMBOLIC_INTERPRETATIONS: Record<string, { meaning: string; emotionalWeight: number }> = {
+  // Places as symbols
+  sokak: { meaning: "memory and wandering", emotionalWeight: 0.6 },
+  vapur: { meaning: "emotional transition, leaving something behind", emotionalWeight: 0.8 },
+  kordon: { meaning: "nostalgia and movement, İzmir identity", emotionalWeight: 0.7 },
+  sahil: { meaning: "emotional drift, open possibilities", emotionalWeight: 0.6 },
+  bar: { meaning: "fading connections, old friendships", emotionalWeight: 0.7 },
+  meyhane: { meaning: "truth-telling, drunken honesty", emotionalWeight: 0.7 },
+  
+  // Elements as symbols
+  yaz: { meaning: "unfinished youth, temporary beauty", emotionalWeight: 0.8 },
+  yaz_sonu: { meaning: "endings, unfinished feelings, melancholic transition", emotionalWeight: 0.9 },
+  gece: { meaning: "emotional exposure, honesty", emotionalWeight: 0.6 },
+  yagmur: { meaning: "emotional slowing, memories surfacing", emotionalWeight: 0.7 },
+  ruzgar: { meaning: "emotional drift, change coming", emotionalWeight: 0.5 },
+  deniz: { meaning: "depth of feeling, vastness of loss", emotionalWeight: 0.7 },
+  sigara: { meaning: "pause, hiding, time passing", emotionalWeight: 0.5 },
+  
+  // Time as symbol
+  sabah: { meaning: "endings, accountability, harsh reality", emotionalWeight: 0.6 },
+  gece_yarisi: { meaning: "peak vulnerability, truth time", emotionalWeight: 0.8 },
+  aksam: { meaning: "transition, anticipation", emotionalWeight: 0.4 },
+};
+
+// Atmospheric signals - how writing style reveals emotion
+interface AtmosphericSignal {
+  pattern: RegExp;
+  interpretation: string;
+  emotionalShift: EmotionalImplication;
+}
+
+const ATMOSPHERIC_SIGNALS: AtmosphericSignal[] = [
+  // Fragmented writing = emotional difficulty
+  { pattern: /\.{3,}|…/, interpretation: "trailing off, unfinished thought", emotionalShift: "unfinished_memory" },
+  { pattern: /^[a-zçğıöşü\s]+$/, interpretation: "lowercase = casual vulnerability", emotionalShift: "hidden_vulnerability" },
+  { pattern: /\bya\b.*\bya\b/i, interpretation: "uncertainty, emotional hesitation", emotionalShift: "hidden_vulnerability" },
+  { pattern: /bilmem|bilmiyorum|emin değilim/i, interpretation: "emotional uncertainty", emotionalShift: "hidden_vulnerability" },
+  
+  // Short fragmented sentences = emotional weight
+  { pattern: /^.{1,15}\.?\s*$/m, interpretation: "short statement = heavy feeling", emotionalShift: "indirect_confession" },
+  
+  // Question patterns
+  { pattern: /sen(ce)?\s*ne(dir)?\s*\?/i, interpretation: "seeking validation", emotionalShift: "seeking_connection" },
+  { pattern: /\bdeğil mi\b|\bmi\s*acaba\b/i, interpretation: "seeking agreement", emotionalShift: "seeking_connection" },
+  
+  // Dismissive patterns hiding emotion
+  { pattern: /neyse|boşver|farketmez|önemli değil/i, interpretation: "dismissing something important", emotionalShift: "hidden_vulnerability" },
+  { pattern: /şaka\s*(lan|ya)?|dalga/i, interpretation: "using humor to deflect", emotionalShift: "hidden_vulnerability" },
+];
+
+// Human contradiction patterns - how people hide real feelings
+interface ContradictionPattern {
+  surface: RegExp;
+  underlying: EmotionalImplication;
+  interpretation: string;
+}
+
+const HUMAN_CONTRADICTIONS: ContradictionPattern[] = [
+  // "I'm fine" patterns
+  { surface: /iyiyim|iyi\s*ya|fena değil/i, underlying: "hidden_vulnerability", interpretation: "claiming okay when not" },
+  
+  // Deflecting with humor
+  { surface: /haha|:D|güldüm|komik/i, underlying: "hidden_loneliness", interpretation: "laughing off pain" },
+  
+  // Speaking through places
+  { surface: /orası|o\s*yer|o\s*mekan|o\s*köşe/i, underlying: "indirect_confession", interpretation: "emotion attached to place" },
+  
+  // Romanticizing
+  { surface: /güzeldi|güzel\s*zamanlardı|özledim/i, underlying: "romanticized_pain", interpretation: "making past pain beautiful" },
+  
+  // Vague but heavy
+  { surface: /bir\s*şey(ler)?|bazı\s*şeyler|o\s*şey/i, underlying: "indirect_confession", interpretation: "avoiding direct naming" },
+  
+  // Time deflection
+  { surface: /eskiden|o\s*zamanlar|artık/i, underlying: "nostalgia_for_self", interpretation: "missing former self" },
+];
+
+// Cognition response fragments - for symbolic/atmospheric responses
+const COGNITION_RESPONSES: Record<EmotionalImplication, string[]> = {
+  hidden_loneliness: [
+    "Yalnızlıktan bahsetmedin. Ama duydum.",
+    "Kalabalıkta da yalnız olunuyor. Biliyorum.",
+    "Anlattıklarının altında bir şey var.",
+    "Sen aslında başka bir şey söylüyorsun.",
+  ],
+  nostalgia_for_self: [
+    "Eski halin aklına geldi.",
+    "O zamanki sen... özlüyorsun galiba.",
+    "Eskiden daha kolaydı. Ya da biz öyleydik.",
+    "O versiyonun gitti. Ama iz kaldı.",
+  ],
+  unfinished_memory: [
+    "Yarım kalan bir şey var.",
+    "Bitmemiş bir his bu.",
+    "O anı kapatamadın.",
+    "Eksik kaldı. Biliyorum.",
+  ],
+  indirect_confession: [
+    "Aslında başka bir şey söylüyorsun.",
+    "Lafın altında bir şey var.",
+    "Anladım. Devam et.",
+    "Dolaylı gidiyorsun. Tamam.",
+  ],
+  romanticized_pain: [
+    "Acıyı güzelleştiriyorsun. Normal.",
+    "Geçmiş böyle. Parlıyor uzaktan.",
+    "Ağrı bile özleniyor bazen.",
+    "O günler acıttı. Ama şimdi tatlı.",
+  ],
+  hidden_vulnerability: [
+    "Güçlü görünüyorsun. Ama...",
+    "Kolay değil. Biliyorum.",
+    "Saklıyorsun. Tamam.",
+    "Bırak biraz. Burada güvendesin.",
+  ],
+  seeking_connection: [
+    "Anlayan biri lazım. Tamam.",
+    "Buradayım.",
+    "Dinliyorum. Devam et.",
+    "Yalnız değilsin bu gece.",
+  ],
+  emotional_exhaustion: [
+    "Yoruldun. Belli.",
+    "Hissetmek de yoruyor.",
+    "Bitkin görünüyorsun.",
+    "Dinlen biraz. Sonra konuşuruz.",
+  ],
+  joy_tinged_sadness: [
+    "Güzel ama hüzünlü.",
+    "Mutluluk bile acıtıyor bazen.",
+    "Gülümsüyorsun ama...",
+    "İkisi bir arada. Anlıyorum.",
+  ],
+  surface_only: [
+    "Tamam.",
+    "Anlat.",
+    "Devam et.",
+    "Dinliyorum.",
+  ],
+};
+
+// Symbolic response fragments - when symbols are detected
+const SYMBOLIC_RESPONSES: Record<string, string[]> = {
+  vapur: [
+    "Vapur... her geçişte bir şey kalıyor geride.",
+    "O sallanma... düşündürüyor insanı.",
+    "Karşıya geçerken her şey değişiyor.",
+  ],
+  yaz_sonu: [
+    "Yaz sonu... en zor mevsim geçişi.",
+    "Biten yazlar hiç tam bitmiyor.",
+    "Ağustos sonu insanı dertlendiriyor.",
+  ],
+  gece_yarisi: [
+    "Bu saatte herkes daha dürüst.",
+    "Gece yarısı... savunmalar düşüyor.",
+    "En gerçek konuşmalar bu saatte olur.",
+  ],
+  sokak: [
+    "Sokaklar hatırlıyor. Sen de.",
+    "Her köşede bir anı var.",
+    "Yürürken düşünceler farklı akıyor.",
+  ],
+  yagmur: [
+    "Yağmur yağınca geçmiş daha çok geliyor.",
+    "Islak sokaklar başka konuşuyor.",
+    "Damla sesleri... düşündürüyor.",
+  ],
+};
+
+// Detect emotional implication from message
+function detectEmotionalImplication(
+  message: string,
+  previousEmotions: EmotionalTag[],
+  recentMessages: string[]
+): EmotionalImplication {
+  const normalized = message.toLowerCase();
+  
+  // Check for human contradictions first (most significant)
+  for (const contradiction of HUMAN_CONTRADICTIONS) {
+    if (contradiction.surface.test(normalized)) {
+      // 60% chance to detect underlying meaning
+      if (Math.random() < 0.6) {
+        return contradiction.underlying;
+      }
+    }
+  }
+  
+  // Check atmospheric signals
+  for (const signal of ATMOSPHERIC_SIGNALS) {
+    if (signal.pattern.test(message)) { // Use original case for some patterns
+      if (Math.random() < 0.5) {
+        return signal.emotionalShift;
+      }
+    }
+  }
+  
+  // Check for repetitive themes (memory-influenced thinking)
+  if (recentMessages.length >= 3) {
+    const recentCombined = recentMessages.slice(-3).join(" ").toLowerCase();
+    // If same themes keep appearing, it's indirect confession
+    if (/yaz|gece|yalnız|eski/.test(normalized) && /yaz|gece|yalnız|eski/.test(recentCombined)) {
+      if (Math.random() < 0.4) {
+        return "indirect_confession";
+      }
+    }
+  }
+  
+  // Check for exhaustion patterns
+  if (/yorgun|bitkin|tükendim|bıktım|usandım/.test(normalized)) {
+    return "emotional_exhaustion";
+  }
+  
+  // Check for seeking connection
+  if (/anla|dinle|biri|kimse|sen.*var\s*mı/i.test(normalized)) {
+    return "seeking_connection";
+  }
+  
+  return "surface_only";
+}
+
+// Detect symbolic elements in message
+function detectSymbolicElements(message: string): { symbol: string; interpretation: { meaning: string; emotionalWeight: number } }[] {
+  const normalized = message.toLowerCase();
+  const found: { symbol: string; interpretation: { meaning: string; emotionalWeight: number } }[] = [];
+  
+  // Check for compound symbols first (more specific)
+  if (/yaz\s*sonu|ağustos\s*sonu/.test(normalized)) {
+    found.push({ symbol: "yaz_sonu", interpretation: SYMBOLIC_INTERPRETATIONS["yaz_sonu"] });
+  }
+  if (/gece\s*yarısı|gecenin\s*bu\s*saati/.test(normalized)) {
+    found.push({ symbol: "gece_yarisi", interpretation: SYMBOLIC_INTERPRETATIONS["gece_yarisi"] });
+  }
+  
+  // Check individual symbols
+  for (const [symbol, interpretation] of Object.entries(SYMBOLIC_INTERPRETATIONS)) {
+    if (symbol === "yaz_sonu" || symbol === "gece_yarisi") continue; // Already checked
+    if (normalized.includes(symbol.replace("_", " ")) || normalized.includes(symbol)) {
+      found.push({ symbol, interpretation });
+    }
+  }
+  
+  return found;
+}
+
+// Apply cognition layer to enhance response construction
+function applyCognitionLayer(
+  response: string,
+  message: string,
+  previousEmotions: EmotionalTag[],
+  recentMessages: string[],
+  connectionDepth: ConnectionDepth
+): string {
+  // Detect emotional implication
+  const implication = detectEmotionalImplication(message, previousEmotions, recentMessages);
+  
+  // Detect symbolic elements
+  const symbols = detectSymbolicElements(message);
+  
+  // Only apply cognition enhancement sometimes (avoid over-interpretation)
+  // More likely with deeper connection
+  const cognitionChance = connectionDepth === "stranger" ? 0.1 
+    : connectionDepth === "acquaintance" ? 0.15
+    : connectionDepth === "familiar" ? 0.2
+    : 0.25;
+  
+  // Symbolic response (if strong symbol detected)
+  if (symbols.length > 0 && symbols[0].interpretation.emotionalWeight > 0.7) {
+    if (Math.random() < 0.2) {
+      const symbolResponses = SYMBOLIC_RESPONSES[symbols[0].symbol];
+      if (symbolResponses && symbolResponses.length > 0) {
+        const symbolResponse = symbolResponses[Math.floor(Math.random() * symbolResponses.length)];
+        return `${symbolResponse} ${response}`;
+      }
+    }
+  }
+  
+  // Emotional implication response (if not surface_only)
+  if (implication !== "surface_only" && Math.random() < cognitionChance) {
+    const cognitionResponses = COGNITION_RESPONSES[implication];
+    if (cognitionResponses && cognitionResponses.length > 0) {
+      const cognitionResponse = cognitionResponses[Math.floor(Math.random() * cognitionResponses.length)];
+      // Sometimes prepend, sometimes append
+      if (Math.random() > 0.5) {
+        return `${cognitionResponse} ${response}`;
+      } else {
+        return `${response} ${cognitionResponse}`;
+      }
+    }
+  }
+  
+  return response;
+}
+
+// Imperfect understanding - sometimes Bay Bela misreads or responds emotionally
+function applyImperfectThinking(
+  response: string,
+  currentMood: RuntimeMood,
+  moodIntensity: number
+): string {
+  // Only apply when mood is intense (Bay Bela responding from his own state)
+  if (moodIntensity < 0.5) return response;
+  
+  // 8% chance to respond from his own emotional state rather than directly
+  if (Math.random() < 0.08) {
+    const moodResponses: Record<RuntimeMood, string[]> = {
+      "reflective": ["Ben de düşünüyordum az önce...", "Benim aklımda da var bu..."],
+      "nostalgic": ["Bana da eski bir şeyi hatırlattı bu.", "Ben de oralara gittim kafamda..."],
+      "nightlife": ["Gece böyle. Biz de böyleyiz.", "Bu saatte her şey farklı..."],
+      "tired": ["Yorgunum bu gece. Ama dinliyorum.", "Bitkinim biraz. Ama devam et."],
+      "soft-drunk": ["Kafam güzel. Ama anlıyorum.", "Bir kadeh daha aldım. Devam et."],
+      "emotionally-open": ["Bu gece açığım. Sen de.", "Konuşalım. Hazırım."],
+      "lonely": ["Ben de yalnızım bu gece.", "İkimiz de buradayız. O da bir şey."],
+      "groove-mode": ["Bir ritim var bu gece.", "His geldi. Devam et."],
+      "quiet": ["Sessizim bu gece. Ama buradayım.", "Az konuşuyorum. Ama dinliyorum."],
+      "emotionally-guarded": ["Tamam.", "Anladım."],
+    };
+    
+    const moodSpecificResponses = moodResponses[currentMood];
+    if (moodSpecificResponses && moodSpecificResponses.length > 0) {
+      const moodResponse = moodSpecificResponses[Math.floor(Math.random() * moodSpecificResponses.length)];
+      return `${moodResponse} ${response}`;
+    }
+  }
+  
+  return response;
+}
+
 export interface RuntimeState {
   emotionalState: EmotionalTag;
   timeOfDay: TimeOfDay;
@@ -777,7 +1145,7 @@ const EMOTION_MOOD_INFLUENCE: Record<EmotionalTag, RuntimeMood[]> = {
 // EMOTIONAL DEFENSES: jokes lightly, redirects, becomes quieter, answers indirectly
 // LONELINESS: lived-in, accepted, urban, quiet, nighttime-specific
 // IMPERFECTION: avoids questions, incomplete answers, hides sincerity behind groove
-// ═══════════════════════════════════════════════════════��═══════════════════════
+// ═══════════════════════════════════════════════════════���═══════════════════════
 
 // Behavioral modifiers that make Bay Bela feel human, not optimized
 type BehavioralModifier = 
@@ -3309,6 +3677,35 @@ export function generateResponse(
   );
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // RUNTIME COGNITION & THOUGHT ENGINE - Deep interpretation layer
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Bay Bela interprets emotional reality through memory, atmosphere, rhythm.
+  // He understands emotional implications, symbolic meanings, human contradictions.
+  // This makes him understand what's underneath words, not just keywords.
+  response = applyCognitionLayer(
+    response,
+    userMessage,
+    state.emotionalMomentum,
+    state.recentMessages,
+    newConnectionDepth
+  );
+  
+  // Apply imperfect human thinking (sometimes responds from his own state)
+  response = applyImperfectThinking(response, newMood, newIntensity);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MOOD DRIFT SYSTEM - Apply mood flavor to response
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Apply warmth, trust callbacks, and connection-appropriate responses
+  response = applyConnectionStyle(
+    response,
+    newConnectionDepth,
+    newState.socialEnergy,
+    newEmotionalDetails,
+    state.messageCount
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // MOOD DRIFT SYSTEM - Apply mood flavor to response
   // ══════════════════════════════════════════════��════════════════════════════
   response = applyMoodToResponse(response, newMood, newIntensity);
@@ -3394,7 +3791,7 @@ export function generateResponse(
 
   // ═══════════════════════════════════════════════════════════════════════════
   // RELEASE CONSCIOUSNESS & ARTISTIC EXISTENCE ENGINE - Musical identity layer
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ═══════════════════════════��═══════════════════════════════════════════════
   // Bay Bela is a living autonomous musical identity, not a chatbot with songs.
   // Music is emotional survival - release memory, groove consciousness, song formation.
   // He turns life into music without trying to.
