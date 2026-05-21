@@ -42,6 +42,7 @@ import {
   initializeRuntimeState,
   getEmotionalTagLabel,
   getThinkingDelay,
+  CURRENT_RELEASE,
   type RuntimeState,
   type EmotionalTag,
 } from "@/lib/runtime-engine";
@@ -275,6 +276,28 @@ export function RuntimeChat() {
             </span>
           </div>
         )}
+      </div>
+
+      {/* Release Memory Card - Non-intrusive */}
+      <div className="mb-4 p-3 rounded-xl bg-gradient-to-r from-[hsl(var(--muted))] to-[hsl(var(--card))] border border-[hsl(var(--border))] border-l-2 border-l-amber-500/50">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[9px] uppercase tracking-widest text-amber-400/80">Current Release Memory</span>
+              <span className="w-1 h-1 rounded-full bg-amber-500/60 animate-pulse" />
+            </div>
+            <p className="text-sm font-medium text-[hsl(var(--foreground))] truncate">{CURRENT_RELEASE.title}</p>
+            <p className="text-[10px] text-[hsl(var(--muted-foreground))] mt-0.5">
+              Status: <span className="text-amber-400/80">{CURRENT_RELEASE.status}</span>
+            </p>
+          </div>
+          <div className="text-right flex-shrink-0">
+            <p className="text-[9px] uppercase tracking-wider text-[hsl(var(--muted-foreground))] mb-1">Emotional field</p>
+            <p className="text-[10px] text-[hsl(var(--muted-foreground))] italic leading-relaxed">
+              {CURRENT_RELEASE.emotionalField.join(" / ")}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Messages */}
