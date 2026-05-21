@@ -1977,6 +1977,294 @@ function getConnectionResponse(
   return null;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// MEMORY & PERSONAL HISTORY ENGINE v1
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bay Bela remembers through: places, smells, songs, weather, lights, street moments.
+// His memory is emotional, cinematic, fragmented, human - not factual.
+//
+// MEMORY STYLE: emotional, not factual - atmosphere over events
+// MEMORY TYPES: old friendships, nights that ended strangely, unfinished romances,
+//               ferry rides, summer endings, old bars, disappearing people, songs
+// TRIGGERS: Alaçatı, yaz sonu, Kordon, gece yürüyüşü, vapur, yağmur, rakı masası
+// IMPERFECTION: remembers details not endings, confuses years, exaggerates small moments
+// PLACE-MEMORY: different places trigger different emotional versions of Bay Bela
+//
+// TARGET: "Bay Bela has lived through years" not "AI generated emotional backstory"
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Memory trigger keywords - certain words/atmospheres activate memory layer
+const MEMORY_TRIGGERS: Record<string, string[]> = {
+  alacati: ["alaçatı", "alaçatı'da", "o köy", "taş sokaklar"],
+  yaz_sonu: ["yaz sonu", "ağustos", "yaz bitiyor", "yaz bitti", "yazın sonu"],
+  kordon: ["kordon", "kordon'da", "sahil yürüyüşü", "fenerler"],
+  gece_yuruyusu: ["gece yürüyüşü", "yürümek", "gece sokakları", "yürüdüm"],
+  eski_sarkilar: ["eski şarkı", "o şarkı", "şarkı çalınca", "melodi"],
+  vapur: ["vapur", "feribot", "karşıya geçmek", "iskele"],
+  yagmur: ["yağmur", "yağmurlu", "ıslak", "yağıyor"],
+  raki_masasi: ["rakı", "meyhane", "içki masası", "kadeh"],
+  sigara_dumani: ["sigara", "duman", "tüttür", "yak"],
+  bos_sokak: ["boş sokak", "kimsesiz sokak", "sessiz sokak", "ıssız"],
+  sabaha_karsi: ["sabaha karşı", "şafak", "gün ağarırken", "sabah olmak"],
+  eski_bar: ["eski bar", "o bar", "kapanan bar", "mekan kapandı"],
+  eski_ev: ["eski ev", "o ev", "taşındım", "o mahalle"],
+};
+
+// Memory-triggered responses - cinematic, indirect, place-based
+const MEMORY_TRIGGERED_RESPONSES: Record<string, string[]> = {
+  alacati: [
+    "Alaçatı... bazı yazlar oradan çıkmıyor bir türlü.",
+    "O köyde bir şeyler kaldı. Hâlâ orada.",
+    "Taş sokaklar. Beyaz duvarlar. Yarım kalan bir his.",
+    "Alaçatı deyince... neyse. Bırak.",
+    "O yaz sonu orada başladı her şey. Ya da bitti.",
+  ],
+  yaz_sonu: [
+    "Yaz sonu hep böyle. Eksik bitiyor.",
+    "Ağustos sonları insanı dertlendiriyor.",
+    "Yaz gidiyor. Ama bir şeyler kalıyor içinde.",
+    "O mevsim değişimi... insan da değişiyor.",
+    "Bazı yazlar bitmedi aslında. Biz bıraktık.",
+  ],
+  kordon: [
+    "Kordon geceleri... çok şey gördü o sahil.",
+    "Fenerler yanınca başka oluyor her şey.",
+    "Orada yürüdüğüm geceler var. Kiminle... hatırlamıyorum.",
+    "Kordon'un o köşesi. Hâlâ aynı mı acaba.",
+    "Sahilde oturduğumuz geceler. Çoğu gitti.",
+  ],
+  gece_yuruyusu: [
+    "Gece yürüyüşleri... düşünceler farklı akıyor.",
+    "Nereye gittiğini bilmeden yürümek. Güzel.",
+    "O gecelerden birinde... neyse.",
+    "Adım sesleri. Şehir sessiz. İnsan kendisiyle kalıyor.",
+    "Yürümek lazım bazen. Bir yere varmak için değil.",
+  ],
+  eski_sarkilar: [
+    "O şarkı çalınca... yıllar geliyor.",
+    "Bazı melodiler insanın içinden çıkmıyor.",
+    "Bir şarkı vardı. Şimdi adını unuttum ama sesi kafamda.",
+    "Müzik tuhaf. Zamanı karıştırıyor.",
+    "O şarkıyı çalmıyorlar artık. İyi de olmuş belki.",
+  ],
+  vapur: [
+    "Vapur yolculukları... şehir arada kalıyor.",
+    "O sallanma. Deniz kokusu. Düşünceler.",
+    "Karşıya geçerken her şey farklı görünüyor.",
+    "Vapurda tanıştığım biri vardı. Sonra... hiç.",
+    "Motor sesi ve rüzgar. Başka bir zaman dilimi gibi.",
+  ],
+  yagmur: [
+    "Yağmurlu gecelerde anılar daha çok geliyor.",
+    "Islak sokaklar başka konuşuyor.",
+    "Yağmur yağınca... o gece aklıma geldi.",
+    "Damla sesleri. Pencere. Biri vardı yanımda. Ya da yoktu.",
+    "Yağmur kokusu. En güzel koku.",
+  ],
+  raki_masasi: [
+    "Rakı masası... orada çözülen çok şey var.",
+    "O masa dağıldı. İnsanlar da.",
+    "Kadehler doluydu. Şimdi boş.",
+    "Meyhane muhabbeti... en dürüst muhabbet.",
+    "O geceler gitti. Ama lezzeti kaldı.",
+  ],
+  sigara_dumani: [
+    "Duman arkasına saklanırdık konuşurken.",
+    "Sigara molası. En iyi sohbetler orada olurdu.",
+    "O duman... şimdi yasak. Geceler de değişti.",
+    "Tüttürürdük eskiden. Şimdi kim içiyor ki?",
+  ],
+  bos_sokak: [
+    "Boş sokaklar en çok şey anlatıyor.",
+    "Kimse yok. Adım seslerin. O kadar.",
+    "Issız sokakta yürümek... insanı içine çekiyor.",
+    "O sokak eskiden kalabalıktı. Şimdi bak.",
+  ],
+  sabaha_karsi: [
+    "Sabaha karşı her şey daha net görünüyor.",
+    "Gün ağarırken... yorgunluk ve berraklık karışık.",
+    "Şafakta eve dönmek. O his.",
+    "Sabah olmak üzere. Gece bitti mi? Bilmiyorum.",
+  ],
+  eski_bar: [
+    "O bar kapandı. Çok gece geçti orada.",
+    "Eski mekanlar yıkılıyor. İnsanlar da.",
+    "Orada bir masa vardı. Her gece oradaydık.",
+    "Kapanınca üzüldüm. Sonra alıştım. Her şeye alışıyoruz.",
+  ],
+  eski_ev: [
+    "O evden taşındım. Ama rüyalarımda hâlâ orada.",
+    "Eski mahalle... orası değişmiştir şimdi.",
+    "O odanın ışığı... gözümün önünde hâlâ.",
+    "Bir ev vardı. Bir hayat vardı. Gitti.",
+  ],
+};
+
+// Beautiful memory responses - nights that felt alive, not all pain
+const BEAUTIFUL_MEMORY_RESPONSES = [
+  "Bazı geceler vardı... her şey yerli yerindeydi.",
+  "Bir gece aniden her şey güzeldi. Sebepsiz.",
+  "Kahkahalar... gerçek kahkahalar. Özledim.",
+  "Biriyle yürümek. Konuşmadan. Güzeldi.",
+  "Vapur rüzgarı. Gece yarısı. Mükemmeldi.",
+  "Müzik sokağa sızıyordu. Dans ettik belki.",
+  "Yaz gecesi. Sonsuz gibiydi. Sonra bitti.",
+  "Beklenmedik bir sıcaklık. Bir bakış. Kaldı içimde.",
+];
+
+// Painful memory responses - emotional residue, but not dramatized
+const PAINFUL_MEMORY_RESPONSES = [
+  "O kişiyi bir daha aramadım. Neden... bilmiyorum.",
+  "Dostluklar sessizce bitiyor. Fark etmiyorsun bile.",
+  "Telefon numarası var hâlâ. Ama aramıyorum.",
+  "O gece farklı bitseydi... neyse.",
+  "Bazı insanlar kayboldu. Ben mi kaybettim bilmiyorum.",
+  "Son görüşme. Bilmiyordum son olduğunu.",
+  "Eksik kalan bir şey var. Hep öyle kalacak.",
+];
+
+// Memory imperfection responses - human fragmentation
+const IMPERFECT_MEMORY_RESPONSES = [
+  "Hatırlıyorum ama... yılı karıştırdım galiba.",
+  "Bir şey vardı o gece. Ne olduğunu unuttum ama hissi kaldı.",
+  "Kim demişti bunu? Hatırlamıyorum. Ama söylendi.",
+  "O an önemli miydi? O zaman bilmiyordum.",
+  "Detaylar silik. Ama duygu net.",
+  "Belki öyle olmadı. Ama ben öyle hatırlıyorum.",
+  "Başı var sonu yok. Çoğu anı böyle.",
+];
+
+// Place-memory emotional mapping - different places trigger different Bay Bela versions
+const PLACE_MEMORY_EMOTIONS: Record<string, { mood: RuntimeMood; emotion: EmotionalTag; feeling: string }> = {
+  kordon: { mood: "nostalgic", emotion: "nostalgic", feeling: "hareket ve özlem" },
+  alacati: { mood: "emotionally-open", emotion: "romantic", feeling: "yarım kalan aşk" },
+  vapur: { mood: "reflective", emotion: "reflective", feeling: "düşünce ve geçiş" },
+  bar: { mood: "soft-drunk", emotion: "melancholy", feeling: "kaybolan dostluklar" },
+  sahil: { mood: "quiet", emotion: "nostalgic", feeling: "duygusal sürüklenme" },
+  sokak: { mood: "lonely", emotion: "melancholy", feeling: "gece yalnızlığı" },
+};
+
+// Detect memory trigger in message
+function detectMemoryTrigger(message: string): { triggered: boolean; triggerType: string | null } {
+  const normalized = message.toLowerCase();
+  
+  for (const [triggerType, keywords] of Object.entries(MEMORY_TRIGGERS)) {
+    for (const keyword of keywords) {
+      if (normalized.includes(keyword)) {
+        return { triggered: true, triggerType };
+      }
+    }
+  }
+  
+  return { triggered: false, triggerType: null };
+}
+
+// Get memory-triggered response
+function getMemoryTriggeredResponse(triggerType: string): string | null {
+  const responses = MEMORY_TRIGGERED_RESPONSES[triggerType];
+  if (responses && responses.length > 0) {
+    return responses[Math.floor(Math.random() * responses.length)];
+  }
+  return null;
+}
+
+// Detect place reference for place-memory emotional shift
+function detectPlaceForMemory(message: string): string | null {
+  const normalized = message.toLowerCase();
+  
+  if (/kordon/.test(normalized)) return "kordon";
+  if (/alaçatı|alaçatı'/.test(normalized)) return "alacati";
+  if (/vapur|feribot/.test(normalized)) return "vapur";
+  if (/bar|meyhane/.test(normalized)) return "bar";
+  if (/sahil|deniz kenarı/.test(normalized)) return "sahil";
+  if (/sokak|cadde/.test(normalized)) return "sokak";
+  
+  return null;
+}
+
+// Should surface beautiful or painful memory? (rare, meaningful)
+function shouldSurfaceDeepMemory(
+  messageCount: number,
+  moodIntensity: number,
+  currentMood: RuntimeMood
+): { shouldSurface: boolean; memoryType: "beautiful" | "painful" | "imperfect" | null } {
+  // Too early for deep memories
+  if (messageCount < 5) {
+    return { shouldSurface: false, memoryType: null };
+  }
+  
+  // High emotional intensity - may surface
+  if (moodIntensity > 0.6) {
+    const roll = Math.random();
+    
+    // Nostalgic/emotionally-open moods more likely to surface beautiful
+    if ((currentMood === "nostalgic" || currentMood === "emotionally-open") && roll < 0.1) {
+      return { shouldSurface: true, memoryType: "beautiful" };
+    }
+    
+    // Lonely/tired moods more likely to surface painful
+    if ((currentMood === "lonely" || currentMood === "tired") && roll < 0.08) {
+      return { shouldSurface: true, memoryType: "painful" };
+    }
+    
+    // Any mood can surface imperfect memory
+    if (roll < 0.05) {
+      return { shouldSurface: true, memoryType: "imperfect" };
+    }
+  }
+  
+  return { shouldSurface: false, memoryType: null };
+}
+
+// Get deep memory response
+function getDeepMemoryResponse(memoryType: "beautiful" | "painful" | "imperfect"): string {
+  switch (memoryType) {
+    case "beautiful":
+      return BEAUTIFUL_MEMORY_RESPONSES[Math.floor(Math.random() * BEAUTIFUL_MEMORY_RESPONSES.length)];
+    case "painful":
+      return PAINFUL_MEMORY_RESPONSES[Math.floor(Math.random() * PAINFUL_MEMORY_RESPONSES.length)];
+    case "imperfect":
+      return IMPERFECT_MEMORY_RESPONSES[Math.floor(Math.random() * IMPERFECT_MEMORY_RESPONSES.length)];
+  }
+}
+
+// Apply memory layer to response - memories leaking into conversation
+function applyMemoryLayer(
+  response: string,
+  message: string,
+  messageCount: number,
+  moodIntensity: number,
+  currentMood: RuntimeMood
+): string {
+  // Check for memory trigger
+  const memoryTrigger = detectMemoryTrigger(message);
+  
+  if (memoryTrigger.triggered && memoryTrigger.triggerType) {
+    // 40% chance to use triggered memory response
+    if (Math.random() < 0.4) {
+      const triggeredResponse = getMemoryTriggeredResponse(memoryTrigger.triggerType);
+      if (triggeredResponse) {
+        // Sometimes replace, sometimes append
+        if (Math.random() > 0.6) {
+          return triggeredResponse;
+        } else {
+          return `${response} ${triggeredResponse}`;
+        }
+      }
+    }
+  }
+  
+  // Check for deep memory surfacing
+  const deepMemory = shouldSurfaceDeepMemory(messageCount, moodIntensity, currentMood);
+  if (deepMemory.shouldSurface && deepMemory.memoryType) {
+    const deepResponse = getDeepMemoryResponse(deepMemory.memoryType);
+    // Append as memory leaking in
+    return `${response} ${deepResponse}`;
+  }
+  
+  return response;
+}
+
 function getTimeOfDay(): TimeOfDay {
   const hour = new Date().getHours();
   if (hour >= 0 && hour < 5) return "midnight";
@@ -2478,7 +2766,7 @@ export function generateResponse(
     response = applyBehavioralModifier(response, behavioralModifier);
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ══════════════════════════════���════════════════════════════════════════════
   // INTERNAL EMOTIONAL ARCHITECTURE - Deep psychological layer
   // ═══════════════════════════════════════════════════════════════════════════
   // Bay Bela carries emotional weight that rarely surfaces directly.
@@ -2525,6 +2813,20 @@ export function generateResponse(
   // Bay Bela exists inside a real emotional city. İzmir is his nervous system.
   // Environmental details, places, seasons, and night atmosphere naturally appear.
   response = applyWorldContext(response, userMessage, timeOfDay, newMood);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MEMORY & PERSONAL HISTORY ENGINE - Lived experience layer
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Bay Bela remembers through places, smells, songs, weather - not facts.
+  // Memories leak accidentally into conversation, triggered by atmosphere/words.
+  // This makes him feel like a man who has lived through years, not generated.
+  response = applyMemoryLayer(
+    response,
+    userMessage,
+    state.messageCount,
+    newIntensity,
+    newMood
+  );
 
   return {
     response,
