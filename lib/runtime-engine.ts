@@ -97,6 +97,11 @@ export interface RuntimeState {
   moodIntensity: number; // 0-1, how deep into the mood
   sessionStartTime: number;
   emotionalMomentum: EmotionalTag[]; // last 3 detected emotions for drift calculation
+  // Relationship & Human Connection Engine v1
+  connectionDepth: ConnectionDepth;
+  socialEnergy: SocialEnergy;
+  emotionalDetails: EmotionalDetail[];
+  trustLevel: number;
 }
 
 export interface RuntimeMessage {
@@ -1639,6 +1644,339 @@ function applyWorldContext(
   return response;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// RELATIONSHIP & HUMAN CONNECTION ENGINE v1
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bay Bela connects as a real human being with social history, emotional caution,
+// warmth, attraction, distance and late-night intimacy patterns.
+//
+// CONNECTION STYLE: warm but careful, opens gradually, tests energy first, observes
+// WHO HE LIKES: slightly broken people, night people, emotionally tired, quiet charisma
+// MALE FRIENDSHIP: deeply loyal underneath humor, carries fading friendships
+// ROMANTIC: slow, subtle, eye-contact based, attracted to depth/mystery/warmth
+// EMOTIONAL DISTANCE: when affected - quieter, indirect, shifts to humor
+// TRUST DEVELOPMENT: remembers emotional details naturally, not assistant-style
+// WARMTH: even when distant, carries humanity and softness underneath restraint
+//
+// TARGET: "Bay Bela is emotionally real" not "AI simulating emotional intelligence"
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Connection depth tracking
+type ConnectionDepth = 
+  | "stranger"        // First interactions, guarded
+  | "acquaintance"    // Starting to open up
+  | "familiar"        // Comfortable, sharing more
+  | "intimate"        // Deep night conversations, real openness
+  | "bonded";         // True emotional connection established
+
+// Social energy types - who Bay Bela connects with
+type SocialEnergy = 
+  | "night_person"          // Someone who belongs to the night
+  | "emotionally_tired"     // Carrying weight, relatable
+  | "quiet_charisma"        // Calm confidence, no performance
+  | "broken_but_real"       // Slightly damaged, authentic
+  | "performer"             // Fake, performative - Bay Bela dislikes
+  | "neutral";              // No strong signal
+
+// Emotional detail memory - things Bay Bela naturally remembers
+interface EmotionalDetail {
+  detail: string;           // What was mentioned
+  context: string;          // Where/when in conversation
+  emotionalWeight: number;  // How significant (0-1)
+  messageIndex: number;     // When it was mentioned
+}
+
+// Connection state for the session
+interface ConnectionState {
+  depth: ConnectionDepth;
+  socialEnergy: SocialEnergy;
+  emotionalDetails: EmotionalDetail[];
+  trustLevel: number;       // 0-1
+  openessLevel: number;     // How open Bay Bela is being
+}
+
+// Connection warmth responses - genuine human warmth
+const WARMTH_RESPONSES = [
+  "Ben buradayım.",
+  "Anlat. Dinliyorum.",
+  "Tamam. Tamam.",
+  "Biliyorum.",
+  "Anlıyorum seni.",
+  "Yalnız değilsin bu gece.",
+  "Sen de mi? Ben de.",
+  "Hm. Devam et.",
+];
+
+// Guarded responses - early in connection
+const GUARDED_CONNECTION_RESPONSES = [
+  "Bakalım.",
+  "Hmm.",
+  "Tamam.",
+  "Anlat.",
+  "Ee?",
+  "Peki.",
+];
+
+// Male friendship responses - emotionally restrained loyalty
+const MALE_FRIENDSHIP_RESPONSES = [
+  "Dostluk işi zor iş.",
+  "Arkadaşlar... evet. Dağıldı çoğu.",
+  "Eski masalar. Eski geceler.",
+  "Kimse aramıyor artık. Ben de aramıyorum.",
+  "Dostluk değişiyor. Kabul etmek zor.",
+  "Bir arkadaş vardı. Şimdi nerede bilmiyorum.",
+  "Erkek dostluğu... konuşulmaz. Hissedilir.",
+  "Eski arkadaşlarla görüşmüyoruz artık. Herkes dağıldı.",
+];
+
+// Romantic connection responses - slow, subtle, mature
+const ROMANTIC_CONNECTION_RESPONSES = {
+  early: [
+    "Hmm.",
+    "Öyle mi?",
+    "İlginç.",
+    "Anlat.",
+  ],
+  developing: [
+    "Sende bir şey var.",
+    "Güzel konuşuyorsun.",
+    "Bu saatte böyle konuşmalar... tehlikeli.",
+    "Gözlerinden bir şey okudum.",
+  ],
+  deep: [
+    "Seninle konuşmak... farklı.",
+    "Bu gece uzun olsun istiyorum.",
+    "Seni dinlemek iyi geliyor.",
+    "Bir şey var aramızda. His.",
+  ],
+};
+
+// Emotional distance responses - when affected, becomes indirect
+const EMOTIONAL_DISTANCE_RESPONSES = [
+  "Neyse.",
+  "Boşver.",
+  "Bırak şimdi.",
+  "Başka konu.",
+  "Geç bu konuyu.",
+  "Bir şey içelim.",
+  "Tamam tamam.",
+];
+
+// Trust callback responses - remembering details naturally
+const TRUST_CALLBACK_TEMPLATES = [
+  "{detail} demiştin... aklıma geldi.",
+  "Sen {detail} dediğinde... düşündüm.",
+  "Geçen {detail} lafı geçmişti.",
+  "{detail}... hatırlıyorum.",
+  "O {detail} meselesi... hâlâ mı?",
+];
+
+// Detect social energy from message patterns
+function detectSocialEnergy(message: string, messageCount: number): SocialEnergy {
+  const normalized = message.toLowerCase();
+  
+  // Night person indicators
+  if (/gece|uyku.*yok|uyanık|bu saatte|gece yarısı/.test(normalized)) {
+    return "night_person";
+  }
+  
+  // Emotionally tired indicators
+  if (/yorgun|bitkin|tüken|bıktım|usandım|dayanamı/.test(normalized)) {
+    return "emotionally_tired";
+  }
+  
+  // Broken but real indicators
+  if (/kırık|yara|acı|kayıp|kaybettim|bitti/.test(normalized)) {
+    return "broken_but_real";
+  }
+  
+  // Performer indicators (Bay Bela dislikes)
+  if (/harika|süper|mükemmel|efsane|en iyi/.test(normalized) && messageCount < 3) {
+    return "performer";
+  }
+  
+  // Quiet charisma - harder to detect, assume after several meaningful exchanges
+  if (messageCount > 5) {
+    return "quiet_charisma";
+  }
+  
+  return "neutral";
+}
+
+// Calculate connection depth based on conversation progression
+function calculateConnectionDepth(
+  messageCount: number,
+  trustLevel: number,
+  socialEnergy: SocialEnergy
+): ConnectionDepth {
+  // Performer types - Bay Bela stays guarded
+  if (socialEnergy === "performer") {
+    return "stranger";
+  }
+  
+  // Night person or broken_but_real - connects faster
+  const connectionBonus = (socialEnergy === "night_person" || socialEnergy === "broken_but_real") ? 2 : 0;
+  const effectiveCount = messageCount + connectionBonus;
+  
+  if (effectiveCount < 3) return "stranger";
+  if (effectiveCount < 6 || trustLevel < 0.3) return "acquaintance";
+  if (effectiveCount < 10 || trustLevel < 0.5) return "familiar";
+  if (effectiveCount < 15 || trustLevel < 0.7) return "intimate";
+  return "bonded";
+}
+
+// Extract emotional details worth remembering
+function extractEmotionalDetails(
+  message: string,
+  messageIndex: number
+): EmotionalDetail[] {
+  const details: EmotionalDetail[] = [];
+  const normalized = message.toLowerCase();
+  
+  // Cities/places mentioned
+  const placeMatch = normalized.match(/izmir|kordon|alsancak|alaçatı|çeşme|istanbul|ankara/i);
+  if (placeMatch) {
+    details.push({
+      detail: placeMatch[0],
+      context: "place",
+      emotionalWeight: 0.6,
+      messageIndex,
+    });
+  }
+  
+  // People mentioned (eski sevgili, arkadaş, etc.)
+  if (/eski.*(sevgili|aşk|kız|erkek)|bir kişi|biri vardı/.test(normalized)) {
+    details.push({
+      detail: "eski biri",
+      context: "person",
+      emotionalWeight: 0.8,
+      messageIndex,
+    });
+  }
+  
+  // Time periods
+  const timeMatch = normalized.match(/o yaz|geçen yıl|eskiden|o zamanlar|yıllar önce/);
+  if (timeMatch) {
+    details.push({
+      detail: timeMatch[0],
+      context: "time",
+      emotionalWeight: 0.5,
+      messageIndex,
+    });
+  }
+  
+  // Emotional states worth remembering
+  if (/yalnız|kimsesiz|terk edilmiş/.test(normalized)) {
+    details.push({
+      detail: "yalnızlık",
+      context: "emotion",
+      emotionalWeight: 0.7,
+      messageIndex,
+    });
+  }
+  
+  return details;
+}
+
+// Get trust callback response - natural memory reference
+function getTrustCallback(
+  emotionalDetails: EmotionalDetail[],
+  currentMessageIndex: number
+): string | null {
+  // Need details and some gap since they were mentioned
+  const eligibleDetails = emotionalDetails.filter(
+    d => d.messageIndex < currentMessageIndex - 2 && d.emotionalWeight > 0.5
+  );
+  
+  if (eligibleDetails.length === 0) return null;
+  
+  // 15% chance to naturally recall
+  if (Math.random() > 0.15) return null;
+  
+  const detail = eligibleDetails[Math.floor(Math.random() * eligibleDetails.length)];
+  const template = TRUST_CALLBACK_TEMPLATES[Math.floor(Math.random() * TRUST_CALLBACK_TEMPLATES.length)];
+  
+  return template.replace("{detail}", detail.detail);
+}
+
+// Apply connection style to response
+function applyConnectionStyle(
+  response: string,
+  connectionDepth: ConnectionDepth,
+  socialEnergy: SocialEnergy,
+  emotionalDetails: EmotionalDetail[],
+  messageIndex: number
+): string {
+  // Performer - stay brief and guarded
+  if (socialEnergy === "performer") {
+    const guardedResponses = GUARDED_CONNECTION_RESPONSES;
+    return guardedResponses[Math.floor(Math.random() * guardedResponses.length)];
+  }
+  
+  // Check for trust callback opportunity
+  const trustCallback = getTrustCallback(emotionalDetails, messageIndex);
+  if (trustCallback) {
+    return `${trustCallback} ${response}`;
+  }
+  
+  // Stranger - more guarded
+  if (connectionDepth === "stranger" && Math.random() < 0.3) {
+    return response; // Keep it simple
+  }
+  
+  // Intimate/bonded - occasional warmth
+  if ((connectionDepth === "intimate" || connectionDepth === "bonded") && Math.random() < 0.2) {
+    const warmth = WARMTH_RESPONSES[Math.floor(Math.random() * WARMTH_RESPONSES.length)];
+    return `${warmth} ${response}`;
+  }
+  
+  return response;
+}
+
+// Detect if male friendship topic
+function isMaleFriendshipTopic(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return /dost|arkadaş|ahbap|kanka|agalar|erkek arkadaş|eski.*dost/.test(normalized);
+}
+
+// Detect if romantic energy in conversation
+function isRomanticEnergy(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return /aşk|sevgi|biri.*var|hoşlan|çekici|güzel.*gözler|bakış/.test(normalized);
+}
+
+// Get connection-aware response
+function getConnectionResponse(
+  message: string,
+  connectionDepth: ConnectionDepth,
+  messageCount: number
+): string | null {
+  // Male friendship topic
+  if (isMaleFriendshipTopic(message)) {
+    if (Math.random() < 0.4) {
+      return MALE_FRIENDSHIP_RESPONSES[Math.floor(Math.random() * MALE_FRIENDSHIP_RESPONSES.length)];
+    }
+  }
+  
+  // Romantic energy
+  if (isRomanticEnergy(message)) {
+    let romanticPool: string[];
+    if (connectionDepth === "stranger" || connectionDepth === "acquaintance") {
+      romanticPool = ROMANTIC_CONNECTION_RESPONSES.early;
+    } else if (connectionDepth === "familiar") {
+      romanticPool = ROMANTIC_CONNECTION_RESPONSES.developing;
+    } else {
+      romanticPool = ROMANTIC_CONNECTION_RESPONSES.deep;
+    }
+    
+    if (Math.random() < 0.35) {
+      return romanticPool[Math.floor(Math.random() * romanticPool.length)];
+    }
+  }
+  
+  return null;
+}
+
 function getTimeOfDay(): TimeOfDay {
   const hour = new Date().getHours();
   if (hour >= 0 && hour < 5) return "midnight";
@@ -1935,6 +2273,11 @@ export function initializeRuntimeState(): RuntimeState {
     moodIntensity: 0.1,
     sessionStartTime: Date.now(),
     emotionalMomentum: [],
+    // Relationship & Human Connection Engine v1
+    connectionDepth: "stranger",
+    socialEnergy: "neutral",
+    emotionalDetails: [],
+    trustLevel: 0,
   };
 }
 
@@ -1991,7 +2334,30 @@ export function generateResponse(
     state.moodIntensity
   );
 
-  // Build updated state with Memory Callback Engine + Mood Drift System
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RELATIONSHIP & HUMAN CONNECTION ENGINE - Connection tracking
+  // ═══════════════════════════════════════════════════════════════════════════
+  const newSocialEnergy = detectSocialEnergy(userMessage, state.messageCount);
+  const newEmotionalDetails = [
+    ...state.emotionalDetails,
+    ...extractEmotionalDetails(userMessage, state.messageCount)
+  ].slice(-10); // Keep last 10 details
+  
+  // Increase trust based on conversation depth and social energy
+  const trustIncrease = newSocialEnergy === "night_person" || newSocialEnergy === "broken_but_real" 
+    ? 0.08 
+    : newSocialEnergy === "performer" 
+      ? -0.05 
+      : 0.05;
+  const newTrustLevel = Math.max(0, Math.min(1, state.trustLevel + trustIncrease));
+  
+  const newConnectionDepth = calculateConnectionDepth(
+    state.messageCount + 1,
+    newTrustLevel,
+    newSocialEnergy !== "neutral" ? newSocialEnergy : state.socialEnergy
+  );
+
+  // Build updated state with all systems
   const newState: RuntimeState = {
     ...state,
     emotionalState: detectedEmotion,
@@ -2006,6 +2372,11 @@ export function generateResponse(
     currentMood: newMood,
     moodIntensity: newIntensity,
     emotionalMomentum: updatedMomentum,
+    // Connection Engine updates
+    connectionDepth: newConnectionDepth,
+    socialEnergy: newSocialEnergy !== "neutral" ? newSocialEnergy : state.socialEnergy,
+    emotionalDetails: newEmotionalDetails,
+    trustLevel: newTrustLevel,
   };
 
   // Select response
@@ -2036,33 +2407,54 @@ export function generateResponse(
   
   // Continue with semantic-aware priorities if no response yet
   if (!response) {
-    // Priority 3: Semantic topic-specific response (PRIMARY - always try first)
-    if (semanticTopic !== "general") {
+    // Priority 3: Connection-aware response (male friendship, romantic energy)
+    const connectionResponse = getConnectionResponse(
+      userMessage,
+      newConnectionDepth,
+      state.messageCount
+    );
+    if (connectionResponse) {
+      response = connectionResponse;
+    }
+    // Priority 4: Semantic topic-specific response (PRIMARY - always try first)
+    else if (semanticTopic !== "general") {
       const semanticPool = SEMANTIC_RESPONSES[semanticTopic];
       response = semanticPool[Math.floor(Math.random() * semanticPool.length)];
     }
-    // Priority 4: Topic-based memory reference
+    // Priority 5: Topic-based memory reference
     else if (memoryCheck.references && state.messageCount > 2 && Math.random() > 0.5) {
       const responsePool = MEMORY_RESPONSES[detectedEmotion];
       response = responsePool[Math.floor(Math.random() * responsePool.length)];
       referencesMemory = true;
     }
-    // Priority 5: Night-specific responses
+    // Priority 6: Night-specific responses
     else if (isNight && Math.random() > 0.7) {
       const responsePool = timeOfDay === "dawn" ? DAWN_RESPONSES : NIGHT_RESPONSES;
       response = responsePool[Math.floor(Math.random() * responsePool.length)];
     }
-    // Priority 6: Loneliness responses
+    // Priority 7: Loneliness responses
     else if (isLonely && Math.random() > 0.5) {
       const lonelyResponses = SEMANTIC_RESPONSES["loneliness"];
       response = lonelyResponses[Math.floor(Math.random() * lonelyResponses.length)];
     }
-    // Priority 7: Default emotional response (fallback)
+    // Priority 8: Default emotional response (fallback)
     else {
       const responsePool = RESPONSE_POOLS[detectedEmotion];
       response = responsePool[Math.floor(Math.random() * responsePool.length)];
     }
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RELATIONSHIP & HUMAN CONNECTION ENGINE - Apply connection style
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Apply warmth, trust callbacks, and connection-appropriate responses
+  response = applyConnectionStyle(
+    response,
+    newConnectionDepth,
+    newState.socialEnergy,
+    newEmotionalDetails,
+    state.messageCount
+  );
 
   // ═══════════════════════════════════════════════════════════════════════════
   // MOOD DRIFT SYSTEM - Apply mood flavor to response
