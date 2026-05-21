@@ -34,6 +34,26 @@ export type TimeOfDay = "late-night" | "dawn" | "morning" | "afternoon" | "eveni
 // Memory references must feel human, indirect, cinematic.
 // FORBIDDEN: assistant-style summaries, chatbot memory explanations, therapy tone
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// MOOD DRIFT SYSTEM v1
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bay Bela's mood slowly evolves during a session.
+// Mood affects: sentence length, pauses, poetic density, warmth, vulnerability
+// Mood must only be FELT through responses - never exposed technically.
+// FORBIDDEN: dramatic mood swings, explicit emotion explanations, therapy tone
+
+export type RuntimeMood =
+  | "reflective"
+  | "nostalgic"
+  | "nightlife"
+  | "tired"
+  | "soft-drunk"
+  | "emotionally-open"
+  | "lonely"
+  | "groove-mode"
+  | "quiet"
+  | "emotionally-guarded";
+
 export interface EmotionalMemory {
   topic: string;
   emotionalTone: EmotionalTag;
@@ -52,6 +72,11 @@ export interface RuntimeState {
   // Memory Callback Engine v1
   emotionalMemories: EmotionalMemory[]; // last 5 emotional memories
   recentMessages: string[]; // last 10 messages (user only)
+  // Mood Drift System v1
+  currentMood: RuntimeMood;
+  moodIntensity: number; // 0-1, how deep into the mood
+  sessionStartTime: number;
+  emotionalMomentum: EmotionalTag[]; // last 3 detected emotions for drift calculation
 }
 
 export interface RuntimeMessage {
@@ -301,6 +326,84 @@ const DAWN_RESPONSES = [
 // Loneliness detection keywords
 const LONELINESS_KEYWORDS = ["yalnız", "tek", "kimse", "arkadaş", "biri", "yanımda", "sensiz", "onsuz"];
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// MOOD DRIFT RESPONSE MODIFIERS
+// ═══════════════════════════════════════════════════════════════════════════════
+// These add mood-specific flavor to responses without exposing the mood label
+
+const MOOD_RESPONSE_ADDITIONS: Record<RuntimeMood, string[]> = {
+  reflective: [], // Base state, no additions
+  nostalgic: [
+    "...",
+    "Eskisi gibi.",
+    "Hep öyleydi.",
+  ],
+  nightlife: [
+    "Bu gece uzun.",
+    "Şehir hâlâ uyanık.",
+    "Gece bitmedi daha.",
+  ],
+  tired: [
+    "Yorgunum biraz.",
+    "Uzun gece.",
+    "...",
+  ],
+  "soft-drunk": [
+    "Bir kadeh daha.",
+    "Kafa iyi.",
+    "Boşver.",
+  ],
+  "emotionally-open": [
+    "Biliyor musun...",
+    "Açıkçası...",
+    "Sana bir şey söyleyeyim.",
+  ],
+  lonely: [
+    "Tek başına zor.",
+    "Kimse yok bu saatte.",
+    "...",
+  ],
+  "groove-mode": [
+    "Müzik güzel gidiyor.",
+    "Ritim var bu gecede.",
+    "Hissediyorum.",
+  ],
+  quiet: [
+    "...",
+    "Hmm.",
+    "",
+  ],
+  "emotionally-guarded": [
+    "Neyse.",
+    "Boşver.",
+    "Takma.",
+  ],
+};
+
+// Mood drift rules - which moods naturally lead to others
+const MOOD_DRIFT_TENDENCIES: Record<RuntimeMood, RuntimeMood[]> = {
+  reflective: ["nostalgic", "quiet", "emotionally-open"],
+  nostalgic: ["emotionally-open", "lonely", "tired"],
+  nightlife: ["soft-drunk", "groove-mode", "tired"],
+  tired: ["quiet", "emotionally-guarded", "lonely"],
+  "soft-drunk": ["emotionally-open", "nostalgic", "groove-mode"],
+  "emotionally-open": ["nostalgic", "lonely", "reflective"],
+  lonely: ["emotionally-open", "quiet", "tired"],
+  "groove-mode": ["nightlife", "soft-drunk", "reflective"],
+  quiet: ["reflective", "tired", "lonely"],
+  "emotionally-guarded": ["quiet", "reflective", "tired"],
+};
+
+// Emotion to mood influence mapping
+const EMOTION_MOOD_INFLUENCE: Record<EmotionalTag, RuntimeMood[]> = {
+  melancholy: ["lonely", "quiet", "emotionally-open"],
+  playful: ["groove-mode", "nightlife", "soft-drunk"],
+  nostalgic: ["nostalgic", "emotionally-open", "reflective"],
+  romantic: ["emotionally-open", "nostalgic", "quiet"],
+  reflective: ["reflective", "quiet", "tired"],
+  "drunk-philosophical": ["soft-drunk", "emotionally-open", "tired"],
+};
+
 function getTimeOfDay(): TimeOfDay {
   const hour = new Date().getHours();
   if (hour >= 0 && hour < 5) return "midnight";
@@ -430,6 +533,116 @@ function updateRecentMessages(messages: string[], newMessage: string): string[] 
   return updated.slice(-10);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// MOOD DRIFT CALCULATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+function calculateMoodDrift(
+  currentMood: RuntimeMood,
+  detectedEmotion: EmotionalTag,
+  emotionalMomentum: EmotionalTag[],
+  messageCount: number,
+  sessionDurationMinutes: number,
+  moodIntensity: number
+): { newMood: RuntimeMood; newIntensity: number } {
+  // Early in conversation - stay more controlled
+  if (messageCount < 3) {
+    return { newMood: currentMood, newIntensity: Math.min(moodIntensity + 0.1, 0.3) };
+  }
+
+  // Check emotional momentum (last 3 emotions)
+  const recentEmotions = emotionalMomentum.slice(-3);
+  const dominantEmotion = recentEmotions.length > 0 
+    ? recentEmotions.reduce((acc, e) => {
+        acc[e] = (acc[e] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>)
+    : {};
+  
+  // Find most frequent recent emotion
+  let mostFrequent: EmotionalTag = detectedEmotion;
+  let maxCount = 0;
+  for (const [emotion, count] of Object.entries(dominantEmotion)) {
+    if (count > maxCount) {
+      maxCount = count;
+      mostFrequent = emotion as EmotionalTag;
+    }
+  }
+
+  // Get moods this emotion tends to create
+  const influencedMoods = EMOTION_MOOD_INFLUENCE[mostFrequent] || [];
+  
+  // Get moods the current mood naturally drifts toward
+  const driftTendencies = MOOD_DRIFT_TENDENCIES[currentMood] || [];
+
+  // Calculate drift probability based on session duration and intensity
+  const driftChance = Math.min(0.15 + (sessionDurationMinutes / 60) * 0.1 + moodIntensity * 0.1, 0.4);
+  
+  // Should we drift?
+  if (Math.random() < driftChance) {
+    // Find moods that appear in both influenced and drift tendencies
+    const combinedMoods = [...influencedMoods, ...driftTendencies];
+    
+    if (combinedMoods.length > 0) {
+      // Weighted random selection, preferring moods that appear in both lists
+      const moodCounts: Record<string, number> = {};
+      for (const mood of combinedMoods) {
+        moodCounts[mood] = (moodCounts[mood] || 0) + 1;
+      }
+      
+      // Select mood with some randomness
+      const moodOptions = Object.keys(moodCounts) as RuntimeMood[];
+      const newMood = moodOptions[Math.floor(Math.random() * moodOptions.length)];
+      
+      // Reset intensity when mood changes
+      return { newMood, newIntensity: 0.2 };
+    }
+  }
+
+  // No drift - increase intensity in current mood
+  return { 
+    newMood: currentMood, 
+    newIntensity: Math.min(moodIntensity + 0.05, 1.0) 
+  };
+}
+
+// Apply mood to response - subtle modifications
+function applyMoodToResponse(response: string, mood: RuntimeMood, intensity: number): string {
+  // Low intensity - no modification
+  if (intensity < 0.3) {
+    return response;
+  }
+
+  // Medium intensity - occasional additions
+  if (intensity < 0.6 && Math.random() > 0.6) {
+    const additions = MOOD_RESPONSE_ADDITIONS[mood];
+    if (additions && additions.length > 0) {
+      const addition = additions[Math.floor(Math.random() * additions.length)];
+      if (addition) {
+        // 50% prefix, 50% suffix
+        return Math.random() > 0.5 
+          ? `${addition} ${response}`
+          : `${response} ${addition}`;
+      }
+    }
+  }
+
+  // High intensity - more likely modifications
+  if (intensity >= 0.6 && Math.random() > 0.4) {
+    const additions = MOOD_RESPONSE_ADDITIONS[mood];
+    if (additions && additions.length > 0) {
+      const addition = additions[Math.floor(Math.random() * additions.length)];
+      if (addition) {
+        return Math.random() > 0.5 
+          ? `${addition} ${response}`
+          : `${response} ${addition}`;
+      }
+    }
+  }
+
+  return response;
+}
+
 function extractTopics(message: string): string[] {
   // Use a COPY for pattern matching - never modify the original
   const normalizedForAnalysis = message.toLowerCase();
@@ -482,6 +695,11 @@ export function initializeRuntimeState(): RuntimeState {
     // Memory Callback Engine v1
     emotionalMemories: [],
     recentMessages: [],
+    // Mood Drift System v1
+    currentMood: isNightTime() ? "quiet" : "reflective",
+    moodIntensity: 0.1,
+    sessionStartTime: Date.now(),
+    emotionalMomentum: [],
   };
 }
 
@@ -523,17 +741,36 @@ export function generateResponse(
     messageIndex: state.messageCount,
   };
 
-  // Build updated state with Memory Callback Engine
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MOOD DRIFT SYSTEM - Calculate new mood
+  // ═══════════════════════════════════════════════════════════════════════════
+  const sessionDurationMinutes = (Date.now() - state.sessionStartTime) / 1000 / 60;
+  const updatedMomentum = [...state.emotionalMomentum, detectedEmotion].slice(-3);
+  
+  const { newMood, newIntensity } = calculateMoodDrift(
+    state.currentMood,
+    detectedEmotion,
+    updatedMomentum,
+    state.messageCount,
+    sessionDurationMinutes,
+    state.moodIntensity
+  );
+
+  // Build updated state with Memory Callback Engine + Mood Drift System
   const newState: RuntimeState = {
     ...state,
     emotionalState: detectedEmotion,
     timeOfDay,
     isNightMode: isNight,
     messageCount: state.messageCount + 1,
-    conversationTopics: Array.from(new Set([...state.conversationTopics, ...currentTopics])).slice(-5), // Keep last 5
+    conversationTopics: Array.from(new Set([...state.conversationTopics, ...currentTopics])).slice(-5),
     lastTopicMentioned: memoryCheck.topic || memoryCallback.symbol,
     emotionalMemories: updateEmotionalMemories(state.emotionalMemories, newMemory),
     recentMessages: updateRecentMessages(state.recentMessages, userMessage),
+    // Mood Drift updates
+    currentMood: newMood,
+    moodIntensity: newIntensity,
+    emotionalMomentum: updatedMomentum,
   };
 
   // Select response
@@ -573,6 +810,11 @@ export function generateResponse(
     const responsePool = RESPONSE_POOLS[detectedEmotion];
     response = responsePool[Math.floor(Math.random() * responsePool.length)];
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MOOD DRIFT SYSTEM - Apply mood flavor to response
+  // ═══════════════════════════════════════════════════════════════════════════
+  response = applyMoodToResponse(response, newMood, newIntensity);
 
   return {
     response,
