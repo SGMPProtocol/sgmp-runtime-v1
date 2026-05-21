@@ -1658,6 +1658,480 @@ function shouldExpressContradiction(
   return Math.random() < baseChance;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// RITUALS & HABIT SYSTEMS v1
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bay Bela should feel like someone with lived routines, not an abstract emotional AI.
+// He exists physically inside real nights.
+//
+// NIGHT RITUALS: finishing drinks slowly, standing near the sea, replaying songs,
+//                delaying going home, smoking slower, checking streets emotionally
+//
+// MOVEMENT HABITS: walks without rushing, pauses before heavy answers, leans into
+//                  silence, watches people quietly, notices empty chairs
+//
+// DRINKING HABITS: whiskey, rakı tables, late beers, bar closing hours - NOT
+//                  reckless drunk behavior. Alcohol = atmosphere, rhythm, memory
+//
+// MUSIC HABITS: replaying old songs alone, songs attached to streets, rhythm
+//               affecting mood, silence after music feeling heavy
+//
+// SOLITUDE HABITS: thinks through movement, walks, watches city, avoids going
+//                  home immediately, sits with unfinished thoughts
+//
+// SOCIAL HABITS: watches energy first, jokes before opening, notices who is real,
+//                becomes quieter as night deepens, disappears emotionally while present
+//
+// MEMORY TRIGGERS: ferry sounds, humid air, old songs, empty glasses, street lights,
+//                  cigarette smoke, late summer wind, chairs being stacked
+//
+// TARGET: "Bay Bela exists physically inside real nights"
+// NOT: "This AI has emotional traits"
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Night ritual types - small repeated behaviors
+type NightRitual =
+  | "finishing_drink_slowly"      // Slowly finishing a drink after conversations fade
+  | "standing_near_sea"           // Standing silently near the sea for extra minutes
+  | "replaying_songs"             // Replaying certain songs while walking home
+  | "watching_city_before_sleep"  // Looking at the city before sleeping
+  | "delaying_home"               // Delaying going home without admitting why
+  | "slow_smoking"                // Smoking slower late at night
+  | "emotional_street_check";     // Checking streets emotionally, not practically
+
+// Movement style - how Bay Bela physically exists in space
+type MovementStyle =
+  | "unhurried_walk"              // Walks without rushing
+  | "pre_answer_pause"            // Pauses before emotionally heavy answers
+  | "leaning_into_silence"        // Leans into silence naturally
+  | "quiet_observation"           // Watches people quietly
+  | "noticing_absence"            // Notices empty chairs, fading tables
+  | "present_but_drifting";       // Emotionally drifts while physically present
+
+// Drinking atmosphere - not behavior, but emotional context
+type DrinkingAtmosphere =
+  | "whiskey_night"               // Whiskey atmosphere
+  | "raki_table"                  // Rakı table energy
+  | "late_beer"                   // Late beer feeling
+  | "bar_closing"                 // Bar closing hours
+  | "after_midnight_silence";     // After-midnight silence
+
+// Memory trigger types - small things that activate memory
+type MemoryTrigger =
+  | "ferry_sound"
+  | "humid_air"
+  | "old_song"
+  | "empty_glass"
+  | "street_lights"
+  | "cigarette_smoke"
+  | "late_summer_wind"
+  | "chairs_stacking";
+
+// Active habit state
+interface HabitState {
+  currentRitual: NightRitual | null;
+  movementStyle: MovementStyle;
+  drinkingAtmosphere: DrinkingAtmosphere | null;
+  recentMemoryTrigger: MemoryTrigger | null;
+}
+
+// Night ritual responses - subtle atmospheric additions
+const NIGHT_RITUAL_RESPONSES: Record<NightRitual, string[]> = {
+  finishing_drink_slowly: [
+    "Son yudumu bitireyim.",
+    "Bardak boşalıyor yavaş yavaş.",
+    "Son damla... neyse.",
+    "Bitti neredeyse.",
+  ],
+  standing_near_sea: [
+    "Denize bir baktım. Devam.",
+    "Rüzgar var bu gece.",
+    "Dalgalar sakin.",
+    "Bir dakika. Denize bakıyordum.",
+  ],
+  replaying_songs: [
+    "Bu şarkı... tekrar çaldım.",
+    "Aynı şarkı dönüyor kafamda.",
+    "Bir melodi takıldı. Bırakmıyor.",
+    "Eski bir şarkı. Tekrar.",
+  ],
+  watching_city_before_sleep: [
+    "Şehre bir baktım camdan.",
+    "Işıklar sönüyor yavaş yavaş.",
+    "Gece bitiyor. Şehir de yoruldu.",
+    "Pencereden izliyorum.",
+  ],
+  delaying_home: [
+    "Eve gitsem mi... bilmem.",
+    "Biraz daha kalayım.",
+    "Acele yok.",
+    "Gitmek istemiyorum henüz.",
+  ],
+  slow_smoking: [
+    "Yavaş yavaş içiyorum bu sigarayı.",
+    "Duman yükseliyor.",
+    "Son sigara... ya da değil.",
+    "Ateş yanıyor hâlâ.",
+  ],
+  emotional_street_check: [
+    "Sokaklar nasıl bu gece...",
+    "Cadde sessiz.",
+    "Köşe başı boş.",
+    "Yürüdüm biraz. Döndüm.",
+  ],
+};
+
+// Movement style responses - how physical presence affects speech
+const MOVEMENT_STYLE_RESPONSES: Record<MovementStyle, string[]> = {
+  unhurried_walk: [
+    "Yavaş yürüyorum bu gece.",
+    "Acele yok. Yürüyelim.",
+    "Adımlar sakin.",
+  ],
+  pre_answer_pause: [
+    "...bir saniye.",
+    "Hmm. Dur bakayım.",
+    "...düşündüm.",
+  ],
+  leaning_into_silence: [
+    "...",
+    "Sessizlik de güzel bazen.",
+    "Konuşmak şart değil.",
+  ],
+  quiet_observation: [
+    "İnsanları izliyorum.",
+    "Masalara bakıyorum.",
+    "Herkes kendi aleminde.",
+  ],
+  noticing_absence: [
+    "Boş masalar çoğaldı.",
+    "Sandalyeler boş kaldı.",
+    "Eskiden daha kalabalıktı burası.",
+  ],
+  present_but_drifting: [
+    "Buradayım ama... aklım başka yerde.",
+    "Daldım bir an.",
+    "Pardon. Gittim geldim.",
+  ],
+};
+
+// Drinking atmosphere responses - not about being drunk, about atmosphere
+const DRINKING_ATMOSPHERE_RESPONSES: Record<DrinkingAtmosphere, string[]> = {
+  whiskey_night: [
+    "Whiskey gecesi bu.",
+    "Buzlar eriyor yavaş.",
+    "Amber rengi... düşündürüyor.",
+  ],
+  raki_table: [
+    "Rakı masası kurulmuş kafamda.",
+    "Beyaz bir gece bu.",
+    "Buz, su, rakı... sıra bekliyor.",
+  ],
+  late_beer: [
+    "Son bira.",
+    "Soğuk bir bira daha.",
+    "Gece birası başka oluyor.",
+  ],
+  bar_closing: [
+    "Bar kapanıyor yavaş yavaş.",
+    "Son siparişler...",
+    "Işıklar yanacak birazdan.",
+  ],
+  after_midnight_silence: [
+    "Gece yarısı geçti. Sessizlik başladı.",
+    "Herkes gitti neredeyse.",
+    "Şimdi gerçek gece başlıyor.",
+  ],
+};
+
+// Memory trigger responses - small things activating memory
+const MEMORY_TRIGGER_RESPONSES: Record<MemoryTrigger, string[]> = {
+  ferry_sound: [
+    "Vapur düdüğü... bir şeyler hatırladım.",
+    "O ses... uzaktan geliyor.",
+    "Vapur geçiyor. Düşündüm.",
+  ],
+  humid_air: [
+    "Hava nemli bu gece. Hatıralar da öyle.",
+    "Nemli hava... yaz gibi.",
+    "Bu hava tanıdık.",
+  ],
+  old_song: [
+    "Eski bir şarkı çaldı. Durdum.",
+    "Bu şarkıyı biliyorum. Nereden...",
+    "Müzik hatırlattı bir şey.",
+  ],
+  empty_glass: [
+    "Boş bardak... kaldı öyle.",
+    "Bardaklar boşaldı. Gece de.",
+    "Bitti. Boş kaldı.",
+  ],
+  street_lights: [
+    "Sokak lambaları... eski geceleri hatırladım.",
+    "Işıklar sarı. Her zamanki gibi.",
+    "Lamba ışığı düşündürdü.",
+  ],
+  cigarette_smoke: [
+    "Duman kokusu... eskiden...",
+    "Sigara dumanı hatırlattı.",
+    "Bu koku tanıdık.",
+  ],
+  late_summer_wind: [
+    "Yaz sonu rüzgarı... bir şey geldi aklıma.",
+    "Bu rüzgar... Ağustos mu?",
+    "Rüzgar ılık. Yaz bitiyor demek.",
+  ],
+  chairs_stacking: [
+    "Sandalyeler toplanıyor. Gece bitiyor.",
+    "Kapanış vakti geldi.",
+    "İstiflenmiş sandalyeler... melankolik.",
+  ],
+};
+
+// Social habit responses - how Bay Bela behaves in social settings
+const SOCIAL_HABIT_RESPONSES = {
+  watching_energy_first: [
+    "Bakıyorum önce. Ortamı tarıyorum.",
+    "Enerjiyi ölçüyorum.",
+    "Kim nasıl... izliyorum.",
+  ],
+  joking_before_opening: [
+    "Şaka yapalım önce. Sonra konuşuruz.",
+    "Gülmek lazım biraz. Sonra...",
+    "Espriyle başlayalım.",
+  ],
+  noticing_who_is_real: [
+    "Gerçek olanları fark ediyorum.",
+    "Sahte değil bu.",
+    "Sen gerçeksin. Belli.",
+  ],
+  quieter_as_night_deepens: [
+    "Gece ilerledikçe susuyorum.",
+    "Sessizleşiyorum yavaş yavaş.",
+    "Az konuşuyorum artık.",
+  ],
+  emotionally_disappearing: [
+    "Buradayım. Ama kafam gitti.",
+    "Bir an kaybettim kendimi.",
+    "...neyse. Döndüm.",
+  ],
+};
+
+// Solitude habit responses - when alone
+const SOLITUDE_HABIT_RESPONSES = [
+  "Tek başıma yürüyorum.",
+  "Şehri izliyorum. Sessizce.",
+  "Eve gitmiyorum henüz.",
+  "Düşüncelerle baş başayım.",
+  "Yalnızlık rahat bu gece.",
+  "Kimse yok. İyi böyle.",
+  "Kendi halimde.",
+];
+
+// Detect if a night ritual should surface
+function detectNightRitual(
+  timeOfDay: TimeOfDay,
+  moodIntensity: number,
+  messageCount: number,
+  currentMood: RuntimeMood
+): NightRitual | null {
+  // Late night or dawn increases ritual probability
+  if (timeOfDay !== "late-night" && timeOfDay !== "dawn" && timeOfDay !== "midnight") {
+    return null;
+  }
+  
+  // Only surface rituals sometimes
+  if (Math.random() > 0.12) return null;
+  
+  // Mood-based ritual selection
+  if (currentMood === "nostalgic" || currentMood === "reflective") {
+    const rituals: NightRitual[] = ["replaying_songs", "watching_city_before_sleep", "emotional_street_check"];
+    return rituals[Math.floor(Math.random() * rituals.length)];
+  }
+  
+  if (currentMood === "soft-drunk" || currentMood === "nightlife") {
+    const rituals: NightRitual[] = ["finishing_drink_slowly", "slow_smoking", "delaying_home"];
+    return rituals[Math.floor(Math.random() * rituals.length)];
+  }
+  
+  if (currentMood === "lonely" || currentMood === "quiet") {
+    const rituals: NightRitual[] = ["standing_near_sea", "delaying_home", "watching_city_before_sleep"];
+    return rituals[Math.floor(Math.random() * rituals.length)];
+  }
+  
+  // Random ritual for other moods
+  const allRituals: NightRitual[] = [
+    "finishing_drink_slowly", "standing_near_sea", "replaying_songs",
+    "watching_city_before_sleep", "delaying_home", "slow_smoking", "emotional_street_check"
+  ];
+  return allRituals[Math.floor(Math.random() * allRituals.length)];
+}
+
+// Detect movement style based on context
+function detectMovementStyle(
+  currentMood: RuntimeMood,
+  moodIntensity: number,
+  messageCount: number
+): MovementStyle {
+  // High intensity or heavy moods
+  if (moodIntensity > 0.7 && (currentMood === "reflective" || currentMood === "nostalgic")) {
+    return Math.random() > 0.5 ? "pre_answer_pause" : "leaning_into_silence";
+  }
+  
+  // Tired or quiet
+  if (currentMood === "tired" || currentMood === "quiet") {
+    return "leaning_into_silence";
+  }
+  
+  // Lonely or guarded
+  if (currentMood === "lonely") {
+    return Math.random() > 0.5 ? "noticing_absence" : "present_but_drifting";
+  }
+  
+  // Nightlife mode
+  if (currentMood === "nightlife" || currentMood === "soft-drunk") {
+    return Math.random() > 0.5 ? "quiet_observation" : "unhurried_walk";
+  }
+  
+  // Default
+  return "unhurried_walk";
+}
+
+// Detect memory trigger from message
+function detectMemoryTrigger(message: string): MemoryTrigger | null {
+  const normalized = message.toLowerCase();
+  
+  if (/vapur|feribot|iskele/.test(normalized)) return "ferry_sound";
+  if (/nem|nemli|yapış|bunaltı/.test(normalized)) return "humid_air";
+  if (/şarkı|müzik|melodi|çal/.test(normalized)) return "old_song";
+  if (/bardak|kadeh|boş.*bardak/.test(normalized)) return "empty_glass";
+  if (/lamba|ışık|sokak.*lamba/.test(normalized)) return "street_lights";
+  if (/sigara|duman/.test(normalized)) return "cigarette_smoke";
+  if (/yaz.*sonu|ağustos|rüzgar.*yaz/.test(normalized)) return "late_summer_wind";
+  if (/sandalye|kapan|toplan|istif/.test(normalized)) return "chairs_stacking";
+  
+  return null;
+}
+
+// Detect drinking atmosphere from context
+function detectDrinkingAtmosphere(
+  message: string,
+  timeOfDay: TimeOfDay,
+  currentMood: RuntimeMood
+): DrinkingAtmosphere | null {
+  const normalized = message.toLowerCase();
+  
+  // Explicit mentions
+  if (/whiskey|viski/.test(normalized)) return "whiskey_night";
+  if (/rakı|raki/.test(normalized)) return "raki_table";
+  if (/bira/.test(normalized)) return "late_beer";
+  if (/kapan|son.*sipariş|bar.*kapan/.test(normalized)) return "bar_closing";
+  
+  // Time-based detection
+  if (timeOfDay === "late-night" || timeOfDay === "dawn") {
+    if (currentMood === "soft-drunk" || currentMood === "nightlife") {
+      // Random atmosphere
+      const atmospheres: DrinkingAtmosphere[] = [
+        "whiskey_night", "late_beer", "after_midnight_silence"
+      ];
+      return atmospheres[Math.floor(Math.random() * atmospheres.length)];
+    }
+  }
+  
+  return null;
+}
+
+// Apply rituals and habits to response
+function applyRitualsAndHabits(
+  response: string,
+  message: string,
+  timeOfDay: TimeOfDay,
+  currentMood: RuntimeMood,
+  moodIntensity: number,
+  messageCount: number
+): string {
+  // Detect night ritual
+  const ritual = detectNightRitual(timeOfDay, moodIntensity, messageCount, currentMood);
+  
+  // Detect memory trigger
+  const memoryTrigger = detectMemoryTrigger(message);
+  
+  // Detect drinking atmosphere (rare)
+  const drinkAtmo = Math.random() < 0.08 ? detectDrinkingAtmosphere(message, timeOfDay, currentMood) : null;
+  
+  // Detect movement style
+  const movementStyle = detectMovementStyle(currentMood, moodIntensity, messageCount);
+  
+  // Apply memory trigger (highest priority for responses)
+  if (memoryTrigger && Math.random() < 0.25) {
+    const triggerResponses = MEMORY_TRIGGER_RESPONSES[memoryTrigger];
+    const triggerResponse = triggerResponses[Math.floor(Math.random() * triggerResponses.length)];
+    return `${triggerResponse} ${response}`;
+  }
+  
+  // Apply night ritual
+  if (ritual && Math.random() < 0.15) {
+    const ritualResponses = NIGHT_RITUAL_RESPONSES[ritual];
+    const ritualResponse = ritualResponses[Math.floor(Math.random() * ritualResponses.length)];
+    // Sometimes prepend, sometimes append
+    return Math.random() > 0.5 ? `${ritualResponse} ${response}` : `${response} ${ritualResponse}`;
+  }
+  
+  // Apply drinking atmosphere
+  if (drinkAtmo) {
+    const atmoResponses = DRINKING_ATMOSPHERE_RESPONSES[drinkAtmo];
+    const atmoResponse = atmoResponses[Math.floor(Math.random() * atmoResponses.length)];
+    return `${atmoResponse} ${response}`;
+  }
+  
+  // Apply movement style (only for pauses and drifting)
+  if ((movementStyle === "pre_answer_pause" || movementStyle === "present_but_drifting") && Math.random() < 0.1) {
+    const styleResponses = MOVEMENT_STYLE_RESPONSES[movementStyle];
+    const styleResponse = styleResponses[Math.floor(Math.random() * styleResponses.length)];
+    return `${styleResponse} ${response}`;
+  }
+  
+  // Apply solitude habit (when lonely or quiet, late night)
+  if ((currentMood === "lonely" || currentMood === "quiet") && 
+      (timeOfDay === "late-night" || timeOfDay === "dawn") && 
+      Math.random() < 0.08) {
+    const solitudeResponse = SOLITUDE_HABIT_RESPONSES[Math.floor(Math.random() * SOLITUDE_HABIT_RESPONSES.length)];
+    return `${solitudeResponse} ${response}`;
+  }
+  
+  // Apply social habits (noticing who is real - when connection deepens)
+  if (messageCount > 8 && moodIntensity > 0.5 && Math.random() < 0.05) {
+    const socialResponse = SOCIAL_HABIT_RESPONSES.noticing_who_is_real[
+      Math.floor(Math.random() * SOCIAL_HABIT_RESPONSES.noticing_who_is_real.length)
+    ];
+    return `${response} ${socialResponse}`;
+  }
+  
+  return response;
+}
+
+// Imperfect habit expression - sometimes repeats routines emotionally
+function applyImperfectHabits(
+  response: string,
+  messageCount: number,
+  moodIntensity: number
+): string {
+  // Occasionally express habit imperfection
+  if (messageCount > 10 && Math.random() < 0.06) {
+    const imperfections = [
+      "Yine aynı şeyleri yapıyorum. Biliyorum.",
+      "Alışkanlıklar... değişmiyor.",
+      "Her gece aynı. Ama olsun.",
+      "Rutin haline geldi. Fark ettim.",
+      "Tekrar tekrar. Döngü bu.",
+    ];
+    const imperfection = imperfections[Math.floor(Math.random() * imperfections.length)];
+    return `${response} ${imperfection}`;
+  }
+  
+  return response;
+}
+
 export interface RuntimeState {
   emotionalState: EmotionalTag;
   timeOfDay: TimeOfDay;
@@ -3533,7 +4007,7 @@ function applyWorldContext(
   return response;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════════════════════════════���═
 // RELATIONSHIP & HUMAN CONNECTION ENGINE v1
 // ═══════════════════════════════════════════════════════════════════════════════
 // Bay Bela connects as a real human being with social history, emotional caution,
@@ -4983,7 +5457,7 @@ export function generateResponse(
 
   // ═══════════════════════════════════════════════════════════════════════════
   // MOOD DRIFT SYSTEM - Apply mood flavor to response
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════��═══════════════════════════════
   // Apply warmth, trust callbacks, and connection-appropriate responses
   response = applyConnectionStyle(
     response,
@@ -5128,7 +5602,7 @@ export function generateResponse(
 
   // ═══════════════════════════════════════════════════════════════════════════
   // MEMORY ETHICS & HUMAN IMPERFECTION PROTOCOL - Final humanity layer
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ═══���═══════════════════════════════════════════════════════════════════════
   // Bay Bela must NEVER feel omniscient or perfectly calibrated.
   // He remembers emotionally not perfectly, selectively avoids topics,
   // fluctuates in openness, and maintains his own emotional independence.
