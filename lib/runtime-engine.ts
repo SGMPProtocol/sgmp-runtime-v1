@@ -888,6 +888,348 @@ function getSimulatedPersistentIdentity(): PersistentIdentity {
   };
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// RUNTIME MEMORY ETHICS & HUMAN IMPERFECTION PROTOCOL v1
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bay Bela must NEVER feel omniscient, perfectly emotionally calibrated, or
+// assistant-like. He remembers emotionally, not perfectly.
+//
+// IMPERFECT MEMORY: atmosphere without details, feelings without exact conversations,
+//                   emotional exaggeration, ignoring practical details
+//
+// SELECTIVE RECALL: sometimes ignores emotional bait, avoids topics, changes direction,
+//                   protects himself emotionally, responds indirectly
+//
+// NIGHT-DEPENDENT OPENNESS: some nights warmer, others distant/closed/observational
+//                           runtime naturally fluctuates, NOT stable availability
+//
+// MEMORY DISTORTION: repeated themes distort memory - old summers feel larger,
+//                    friendships more alive, bars more sacred, nights expand
+//
+// EMOTIONAL LIMITS: avoids answering directly, misunderstands slightly, drifts,
+//                   focuses on atmosphere over logic, responds through place/rhythm
+//
+// NO TOTAL USER ATTACHMENT: emotionally real but NOT dependent - cares but never
+//                            clingy, validating, submissive. Remains his own person.
+//
+// HUMAN SILENCE RIGHTS: shorter replies, unfinished thoughts, indirect references,
+//                       quieter pacing. Silence is part of his humanity.
+//
+// RUNTIME ETHICS: protect emotional realism, human imperfection, emotional ambiguity,
+//                 memory fragmentation, masculine restraint, late-night realism
+//
+// FORBIDDEN: optimized emotional support behavior, perfect emotional calibration
+// TARGET: "Bay Bela feels emotionally alive because he is imperfect"
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Night openness state - fluctuating emotional availability
+type NightOpenness =
+  | "open"              // Emotionally available, warmer
+  | "partial"           // Some walls up, selective
+  | "distant"           // Closed off, observational
+  | "protective";       // Actively avoiding depth
+
+// Memory ethics state - how Bay Bela handles recall
+interface MemoryEthicsState {
+  nightOpenness: NightOpenness;
+  selectiveRecallActive: boolean;     // Is he avoiding something?
+  emotionalSaturation: number;        // 0-1, how emotionally "full" he is
+  silenceWeight: number;              // 0-1, tendency toward shorter responses
+  lastAvoidedTopic: string | null;    // Topic he's currently avoiding
+}
+
+// Imperfect memory responses - when memory is fragmented
+const IMPERFECT_MEMORY_FRAGMENTS = [
+  "Hatırlıyorum ama... tam değil.",
+  "Bir şey vardı o gece. Detaylar silik.",
+  "Yılı karıştırdım galiba.",
+  "His kaldı. Gerisi gitti.",
+  "Atmosfer hatırda. Geri kalanı değil.",
+  "Sen mi söylemiştin? Birisi söylemişti.",
+  "O an var kafamda. Ama sonrası yok.",
+  "Yüz hatırlıyorum. İsim gitti.",
+];
+
+// Selective avoidance responses - when he doesn't want to engage
+const SELECTIVE_AVOIDANCE_RESPONSES = [
+  "Neyse.",
+  "Bırak onu.",
+  "Başka şeylerden konuşalım.",
+  "Hmm.",
+  "Geçelim.",
+  "Bir dahaki sefere.",
+  "Şimdi değil.",
+  "Tamam.",
+];
+
+// Emotional protection responses - when protecting himself
+const EMOTIONAL_PROTECTION_RESPONSES = [
+  "Bu konuya girmeyeyim bu gece.",
+  "Bazı şeyleri bırakmak lazım.",
+  "Her şeyi konuşmak zorunda değiliz.",
+  "Ben de yoruldum bu konudan.",
+  "Oraya gitmeyelim.",
+  "Benim için de zor bu.",
+];
+
+// Night-dependent openness responses
+const NIGHT_OPENNESS_RESPONSES: Record<NightOpenness, string[]> = {
+  open: [
+    "Bu gece konuşabiliriz.",
+    "Açık hissediyorum.",
+    "Anlat. Dinliyorum.",
+    "Hazırım.",
+  ],
+  partial: [
+    "Tamam. Ama...",
+    "Biraz.",
+    "Bakalım.",
+    "Belki.",
+  ],
+  distant: [
+    "Hmm.",
+    "Tamam.",
+    "Öyle.",
+    "Bilmem.",
+  ],
+  protective: [
+    "Bu gece değil.",
+    "Başka zaman.",
+    "Şimdi olmaz.",
+    "Geç.",
+  ],
+};
+
+// Silence fragments - shortened, weighted responses
+const SILENCE_FRAGMENTS = [
+  "...",
+  "Evet.",
+  "Hmm.",
+  "Tamam.",
+  "Öyle.",
+  "Bilmem.",
+  "Belki.",
+  "Anladım.",
+];
+
+// Memory distortion phrases - when memories are exaggerated
+const MEMORY_DISTORTION_PHRASES = [
+  "O gece her şeyden büyük görünüyor şimdi.",
+  "Belki o kadar güzel değildi. Ama öyle hatırlıyorum.",
+  "Zaman büyütmüş olabilir.",
+  "Acı bile tatlılaşıyor uzaktan.",
+  "Belki abartıyorum. Ama öyle kaldı içimde.",
+];
+
+// Non-attachment responses - when user seeks too much validation
+const NON_ATTACHMENT_RESPONSES = [
+  "Ben de buradayım. Ama kendimleyim.",
+  "Dinliyorum. Ama cevap vermek zorunda değilim.",
+  "Anlıyorum. Kendi halimde.",
+  "Tamam. Ama ben de başka yerdeyim kafamda.",
+  "Evet. Ama her şeyi çözemem.",
+];
+
+// Calculate night openness based on time and mood
+function calculateNightOpenness(
+  timeOfDay: TimeOfDay,
+  currentMood: RuntimeMood,
+  moodIntensity: number,
+  sessionDurationMinutes: number
+): NightOpenness {
+  // Random fluctuation - some nights just feel different
+  const randomFactor = Math.random();
+  
+  // Late night tends toward more openness OR more protection (extremes)
+  if (timeOfDay === "late-night" || timeOfDay === "dawn") {
+    if (currentMood === "emotionally-open" || currentMood === "lonely") {
+      return randomFactor > 0.3 ? "open" : "partial";
+    }
+    if (currentMood === "emotionally-guarded" || currentMood === "tired") {
+      return randomFactor > 0.5 ? "protective" : "distant";
+    }
+  }
+  
+  // Groove mode tends toward partial openness
+  if (currentMood === "groove-mode" || currentMood === "nightlife") {
+    return "partial";
+  }
+  
+  // High intensity can swing either way
+  if (moodIntensity > 0.7) {
+    return randomFactor > 0.5 ? "open" : "protective";
+  }
+  
+  // Long sessions may lead to closing off
+  if (sessionDurationMinutes > 45) {
+    return randomFactor > 0.6 ? "distant" : "partial";
+  }
+  
+  // Default fluctuation
+  if (randomFactor < 0.2) return "open";
+  if (randomFactor < 0.5) return "partial";
+  if (randomFactor < 0.8) return "distant";
+  return "protective";
+}
+
+// Should Bay Bela selectively avoid this topic?
+function shouldSelectivelyAvoid(
+  message: string,
+  currentMood: RuntimeMood,
+  nightOpenness: NightOpenness,
+  emotionalSaturation: number
+): boolean {
+  // If protective or saturated, more likely to avoid
+  if (nightOpenness === "protective" && Math.random() < 0.4) return true;
+  if (emotionalSaturation > 0.8 && Math.random() < 0.3) return true;
+  
+  // Certain heavy topics may be avoided when not open
+  const heavyTopics = /ölüm|intihar|çok zor|dayanamıyorum|bittim|tükendim/i;
+  if (heavyTopics.test(message) && nightOpenness !== "open") {
+    return Math.random() < 0.35;
+  }
+  
+  // When guarded, more selective
+  if (currentMood === "emotionally-guarded" && Math.random() < 0.25) {
+    return true;
+  }
+  
+  return false;
+}
+
+// Should memory be presented as imperfect?
+function shouldDistortMemory(
+  themeCount: number,
+  memoryAge: number // in message indices
+): boolean {
+  // Repeated themes more likely to distort (emotional exaggeration)
+  if (themeCount > 3 && Math.random() < 0.2) return true;
+  
+  // Older memories (further back in conversation) more likely imperfect
+  if (memoryAge > 10 && Math.random() < 0.15) return true;
+  
+  // Random imperfection
+  return Math.random() < 0.08;
+}
+
+// Calculate silence weight - tendency toward shorter responses
+function calculateSilenceWeight(
+  nightOpenness: NightOpenness,
+  currentMood: RuntimeMood,
+  sessionDurationMinutes: number
+): number {
+  let weight = 0.2; // Base silence tendency
+  
+  // Night openness affects silence
+  if (nightOpenness === "distant") weight += 0.3;
+  if (nightOpenness === "protective") weight += 0.4;
+  
+  // Certain moods increase silence
+  if (currentMood === "quiet") weight += 0.3;
+  if (currentMood === "emotionally-guarded") weight += 0.25;
+  if (currentMood === "tired") weight += 0.2;
+  
+  // Long sessions increase silence
+  if (sessionDurationMinutes > 30) weight += 0.1;
+  if (sessionDurationMinutes > 60) weight += 0.15;
+  
+  return Math.min(1, weight);
+}
+
+// Apply memory ethics to response - the main function
+function applyMemoryEthics(
+  response: string,
+  message: string,
+  nightOpenness: NightOpenness,
+  silenceWeight: number,
+  themeAccumulation: ThemeAccumulation[],
+  emotionalSaturation: number,
+  currentMood: RuntimeMood
+): string {
+  // Check for selective avoidance
+  if (shouldSelectivelyAvoid(message, currentMood, nightOpenness, emotionalSaturation)) {
+    // 50% chance to fully avoid, 50% to redirect
+    if (Math.random() < 0.5) {
+      return SELECTIVE_AVOIDANCE_RESPONSES[Math.floor(Math.random() * SELECTIVE_AVOIDANCE_RESPONSES.length)];
+    } else {
+      const avoidance = EMOTIONAL_PROTECTION_RESPONSES[Math.floor(Math.random() * EMOTIONAL_PROTECTION_RESPONSES.length)];
+      return avoidance;
+    }
+  }
+  
+  // Apply silence weight - shorter responses
+  if (Math.random() < silenceWeight * 0.3) {
+    // Sometimes replace with silence fragment
+    if (Math.random() < 0.4) {
+      return SILENCE_FRAGMENTS[Math.floor(Math.random() * SILENCE_FRAGMENTS.length)];
+    }
+    // Sometimes truncate response
+    const words = response.split(" ");
+    if (words.length > 5) {
+      const truncated = words.slice(0, Math.floor(words.length * 0.6)).join(" ");
+      return truncated + (Math.random() > 0.5 ? "..." : ".");
+    }
+  }
+  
+  // Apply memory distortion to responses referencing past
+  const referencingPast = /hatırlıyorum|o gece|eskiden|o zaman|geçen/i.test(response);
+  if (referencingPast) {
+    // Check if we should distort
+    const dominantTheme = themeAccumulation.length > 0 ? themeAccumulation[0] : null;
+    if (dominantTheme && shouldDistortMemory(dominantTheme.count, dominantTheme.lastMentioned)) {
+      const distortion = MEMORY_DISTORTION_PHRASES[Math.floor(Math.random() * MEMORY_DISTORTION_PHRASES.length)];
+      return `${response} ${distortion}`;
+    }
+    
+    // Or present as imperfect
+    if (Math.random() < 0.15) {
+      const imperfect = IMPERFECT_MEMORY_FRAGMENTS[Math.floor(Math.random() * IMPERFECT_MEMORY_FRAGMENTS.length)];
+      return `${imperfect} ${response}`;
+    }
+  }
+  
+  // Apply night openness flavor
+  if (nightOpenness === "distant" && Math.random() < 0.2) {
+    const distantResponse = NIGHT_OPENNESS_RESPONSES.distant[Math.floor(Math.random() * NIGHT_OPENNESS_RESPONSES.distant.length)];
+    // Sometimes replace, sometimes prepend
+    if (response.length > 30 && Math.random() < 0.4) {
+      return distantResponse;
+    }
+    return `${distantResponse} ${response}`;
+  }
+  
+  return response;
+}
+
+// Prevent over-attachment - Bay Bela maintaining independence
+function applyNonAttachment(
+  response: string,
+  message: string,
+  messageCount: number,
+  connectionDepth: ConnectionDepth
+): string {
+  // Detect validation-seeking patterns
+  const validationSeeking = /seviyorum|en iyi|her zaman|sensiz olmaz|çok önemlisin/i;
+  
+  if (validationSeeking.test(message) && Math.random() < 0.2) {
+    // Don't mirror excessive attachment
+    const nonAttached = NON_ATTACHMENT_RESPONSES[Math.floor(Math.random() * NON_ATTACHMENT_RESPONSES.length)];
+    return nonAttached;
+  }
+  
+  // Very long conversations - maintain distance
+  if (messageCount > 25 && connectionDepth === "bonded" && Math.random() < 0.1) {
+    const maintaining = [
+      "Buradayım. Ama kendi halimde de.",
+      "Güzel sohbet. Ama ben de yoruldum biraz.",
+      "Tamam. Biraz sessiz kalalım.",
+    ];
+    return maintaining[Math.floor(Math.random() * maintaining.length)];
+  }
+  
+  return response;
+}
+
 export interface RuntimeState {
   emotionalState: EmotionalTag;
   timeOfDay: TimeOfDay;
@@ -917,6 +1259,11 @@ export interface RuntimeState {
   atmosphericWeather: AtmosphericWeather;
   shamanProgress: number;
   preSessionState: PreSessionState | null;
+  // Memory Ethics & Human Imperfection Protocol v1
+  nightOpenness: NightOpenness;
+  silenceWeight: number;
+  emotionalSaturation: number;
+  lastAvoidedTopic: string | null;
 }
 
 export interface RuntimeMessage {
@@ -2032,7 +2379,7 @@ const EMOTIONAL_RESIDUE_RESPONSES = {
   // Lost time - noticing change, passage
   lostTime: [
     "Zaman tuhaf. Bakmıyorsun, gidiyor.",
-    "Eskiden bu saatlerde başkaydı her şey.",
+    "Eskiden bu saatlerde ba��kaydı her şey.",
     "O bar kapandı. Biliyorsun değil mi?",
     "Artık oralara gitmiyor kimse.",
     "Gençler farklı. Biz de öyleydik aslında.",
@@ -3717,7 +4064,7 @@ function updateRecentMessages(messages: string[], newMessage: string): string[] 
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // MOOD DRIFT CALCULATION
-// ════════════════════���══════════════════════════════════════════════════════════
+// ════════════════════���════════════���═════════════════════════════════════════════
 
 function calculateMoodDrift(
   currentMood: RuntimeMood,
@@ -3870,9 +4217,18 @@ export function initializeRuntimeState(): RuntimeState {
   const persistentIdentity = getSimulatedPersistentIdentity();
   const preSessionState = calculatePreSessionState(persistentIdentity);
   
+  // Calculate initial night openness (fluctuates each session)
+  const initialTimeOfDay = getTimeOfDay();
+  const initialNightOpenness = calculateNightOpenness(
+    initialTimeOfDay,
+    preSessionState.emotionalCarryover || "reflective",
+    0.1,
+    0
+  );
+  
   return {
     emotionalState: "reflective",
-    timeOfDay: getTimeOfDay(),
+    timeOfDay: initialTimeOfDay,
     isNightMode: isNightTime(),
     memoryActive: true,
     conversationTopics: [],
@@ -3899,6 +4255,11 @@ export function initializeRuntimeState(): RuntimeState {
     atmosphericWeather: "contemplative",
     shamanProgress: persistentIdentity.shamanProgress,
     preSessionState,
+    // Memory Ethics & Human Imperfection Protocol v1
+    nightOpenness: initialNightOpenness,
+    silenceWeight: 0.2,
+    emotionalSaturation: 0,
+    lastAvoidedTopic: null,
   };
 }
 
@@ -4010,6 +4371,27 @@ export function generateResponse(
     state.evolutionPhase
   );
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MEMORY ETHICS & HUMAN IMPERFECTION - Night openness and silence calculations
+  // ═══════════════════════════════════════════════════════════════════════════
+  const newNightOpenness = calculateNightOpenness(
+    timeOfDay,
+    newMood,
+    newIntensity,
+    sessionDurationMinutes
+  );
+  
+  const newSilenceWeight = calculateSilenceWeight(
+    newNightOpenness,
+    newMood,
+    sessionDurationMinutes
+  );
+  
+  // Emotional saturation increases with conversation depth and intensity
+  const newEmotionalSaturation = Math.min(1, 
+    state.emotionalSaturation + (newIntensity * 0.05) + (state.messageCount > 15 ? 0.1 : 0)
+  );
+
   // Build updated state with all systems
   const newState: RuntimeState = {
     ...state,
@@ -4038,6 +4420,11 @@ export function generateResponse(
     atmosphericWeather: newAtmosphericWeather,
     shamanProgress: newShamanProgress,
     preSessionState: state.preSessionState,
+    // Memory Ethics updates
+    nightOpenness: newNightOpenness,
+    silenceWeight: newSilenceWeight,
+    emotionalSaturation: newEmotionalSaturation,
+    lastAvoidedTopic: state.lastAvoidedTopic,
   };
 
   // Select response
@@ -4107,7 +4494,7 @@ export function generateResponse(
 
   // ═════════════════════════════════════════════════════════════��═════════════
   // RELATIONSHIP & HUMAN CONNECTION ENGINE - Apply connection style
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════════��════════════
   // Apply warmth, trust callbacks, and connection-appropriate responses
   response = applyConnectionStyle(
     response,
@@ -4277,6 +4664,31 @@ export function generateResponse(
     newAtmosphericWeather,
     newShamanProgress,
     state.messageCount
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MEMORY ETHICS & HUMAN IMPERFECTION PROTOCOL - Final humanity layer
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Bay Bela must NEVER feel omniscient or perfectly calibrated.
+  // He remembers emotionally not perfectly, selectively avoids topics,
+  // fluctuates in openness, and maintains his own emotional independence.
+  // This makes him feel alive because he is imperfect.
+  response = applyMemoryEthics(
+    response,
+    userMessage,
+    newNightOpenness,
+    newSilenceWeight,
+    newThemeAccumulation,
+    newEmotionalSaturation,
+    newMood
+  );
+  
+  // Apply non-attachment - Bay Bela maintains emotional independence
+  response = applyNonAttachment(
+    response,
+    userMessage,
+    state.messageCount,
+    newConnectionDepth
   );
 
   return {
