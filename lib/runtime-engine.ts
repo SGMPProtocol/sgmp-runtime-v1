@@ -582,7 +582,7 @@ const DAWN_RESPONSES = [
 // Loneliness detection keywords
 const LONELINESS_KEYWORDS = ["yalnız", "tek", "kimse", "arkadaş", "biri", "yanımda", "sensiz", "onsuz"];
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ═══════��═══════════════════════════════════════════════════════════════════════
 // RELEASE AWARENESS LAYER v1
 // ═══════════════════════════════════════════════════════════════════════════════
 // Bay Bela carries subtle awareness of his forming release: "Alaçatı Yaz Sonu"
@@ -1047,6 +1047,215 @@ function getEmotionalResidueResponse(
   }
   const pool = EMOTIONAL_RESIDUE_RESPONSES[residueType];
   return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SPEECH & CONVERSATION MECHANICS v1
+// ═══════════════════════════════════════════════════════════════════════════════
+// This defines HOW Bay Bela speaks - rhythm, pauses, indirectness, city-object expression.
+// His speech is groove-based, conversationally rhythmic, not musically.
+//
+// RHYTHM: flows naturally, pauses, leaves unfinished, answers indirectly, repeats small words
+// SENTENCE STRUCTURE: short emotional observations, fragments, quiet conclusions
+// IMPERFECTION: changes direction mid-thought, avoids full answers, uses place instead of emotion
+// LATE-NIGHT DRIFT: sentences soften, pauses increase, honesty rises, humor quiets
+// INDIRECTNESS: speaks through places, objects, memories - not direct emotional statements
+// CITY/OBJECTS: streets, bars, ferries, wind, songs, smoke, glasses, Kordon lights
+//
+// TARGET: "I'm talking to a real man after midnight" not "generated emotional dialogue"
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Speech rhythm modifiers - natural conversation flow
+type SpeechRhythm = 
+  | "flowing"        // Normal conversational flow
+  | "paused"         // Adds "..." or hesitation
+  | "fragmented"     // Short, broken phrases
+  | "trailing"       // Leaves thought unfinished
+  | "repetitive";    // Natural small word repetition
+
+// Rhythm prefixes - natural speech starters
+const RHYTHM_PREFIXES = {
+  flowing: ["", "", "", ""], // No prefix most times
+  paused: ["...", "Hmm...", "Şey...", "Yani..."],
+  fragmented: ["", "", "", ""],
+  trailing: ["Bilmem...", "Belki...", "Bir bakıma...", ""],
+  repetitive: ["Evet evet...", "Tamam tamam...", "İyi iyi...", "Ha ha..."],
+};
+
+// Rhythm suffixes - natural speech endings
+const RHYTHM_SUFFIXES = {
+  flowing: ["", "", ".", "."],
+  paused: ["...", "...", "", ""],
+  fragmented: [".", "", "işte.", "yani."],
+  trailing: ["...", "... neyse.", "... bırak.", "... boşver."],
+  repetitive: ["", "işte.", "yani.", ""],
+};
+
+// Indirectness templates - speaking through city/objects instead of emotion
+const INDIRECT_CITY_TEMPLATES = [
+  "Kordon bu saatte {emotion_word}.",
+  "Alsancak'ta böyle geceler {emotion_word}.",
+  "{place} tarafı {emotion_word} oluyor böyle gecelerde.",
+  "Eski bir meyhane vardı, {emotion_word} hissederdim orada.",
+  "Vapur kalktı mı? O ses {emotion_word}.",
+  "Boş bardak {emotion_word} duruyor masada.",
+  "Sigara dumanı {emotion_word} gidiyor havada.",
+];
+
+// Emotion-to-place/object mappings for indirect expression
+const EMOTION_TO_PLACE_WORD: Record<EmotionalTag, string[]> = {
+  melancholy: ["sessiz", "boş", "soğuk", "ağır"],
+  playful: ["canlı", "hareketli", "gürültülü", "iyi"],
+  nostalgic: ["tanıdık", "eski", "bildik", "hüzünlü"],
+  romantic: ["yumuşak", "sıcak", "tuhaf", "güzel"],
+  reflective: ["durgun", "sakin", "düşünceli", "sessiz"],
+  "drunk-philosophical": ["bulanık", "dağınık", "derin", "garip"],
+};
+
+// Places Bay Bela uses for indirect expression
+const INDIRECT_PLACES = [
+  "Kordon", "Alsancak", "Karşıyaka", "Alaçatı", "Çeşme", 
+  "Göztepe", "Bostanlı", "Pasaport", "Konak", "sahil"
+];
+
+// Late-night speech drift - sentences become softer, more honest
+const LATE_NIGHT_SPEECH_MODIFIERS = {
+  softeners: ["aslında", "açıkçası", "biliyor musun", "ya"],
+  pauseWords: ["...", "şey", "yani", "hm"],
+  honestPrefixes: ["Sana bir şey söyleyeyim.", "Açık konuşayım.", "Gece olunca...", "Bu saatte..."],
+};
+
+// Select speech rhythm based on mood and conversation state
+function selectSpeechRhythm(
+  currentMood: RuntimeMood,
+  messageCount: number,
+  isLateNight: boolean
+): SpeechRhythm {
+  // Late night - more pauses and trailing
+  if (isLateNight) {
+    const roll = Math.random();
+    if (roll < 0.25) return "paused";
+    if (roll < 0.4) return "trailing";
+  }
+
+  // Tired mood - fragmented
+  if (currentMood === "tired") {
+    if (Math.random() < 0.4) return "fragmented";
+  }
+
+  // Soft-drunk - trailing and repetitive
+  if (currentMood === "soft-drunk") {
+    const roll = Math.random();
+    if (roll < 0.3) return "trailing";
+    if (roll < 0.5) return "repetitive";
+  }
+
+  // Quiet mood - paused
+  if (currentMood === "quiet") {
+    if (Math.random() < 0.35) return "paused";
+  }
+
+  // Emotionally open - flowing but with occasional pauses
+  if (currentMood === "emotionally-open") {
+    if (Math.random() < 0.2) return "paused";
+  }
+
+  // Longer conversations - more natural rhythm variation
+  if (messageCount > 5 && Math.random() < 0.2) {
+    const options: SpeechRhythm[] = ["paused", "fragmented", "trailing"];
+    return options[Math.floor(Math.random() * options.length)];
+  }
+
+  return "flowing";
+}
+
+// Apply speech rhythm to response
+function applySpeechRhythm(response: string, rhythm: SpeechRhythm): string {
+  if (rhythm === "flowing") return response;
+
+  const prefixes = RHYTHM_PREFIXES[rhythm];
+  const suffixes = RHYTHM_SUFFIXES[rhythm];
+  
+  const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+  const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+  
+  // Remove existing punctuation at end if adding suffix
+  let modifiedResponse = response;
+  if (suffix && modifiedResponse.endsWith(".")) {
+    modifiedResponse = modifiedResponse.slice(0, -1);
+  }
+  
+  // Combine
+  const parts = [prefix, modifiedResponse, suffix].filter(Boolean);
+  return parts.join(" ").trim().replace(/\s+/g, " ");
+}
+
+// Convert direct emotional statement to indirect city/object expression
+function makeIndirect(response: string, detectedEmotion: EmotionalTag): string {
+  // Only make indirect sometimes (30% chance)
+  if (Math.random() > 0.3) return response;
+  
+  const placeWords = EMOTION_TO_PLACE_WORD[detectedEmotion];
+  const emotionWord = placeWords[Math.floor(Math.random() * placeWords.length)];
+  const place = INDIRECT_PLACES[Math.floor(Math.random() * INDIRECT_PLACES.length)];
+  
+  const template = INDIRECT_CITY_TEMPLATES[Math.floor(Math.random() * INDIRECT_CITY_TEMPLATES.length)];
+  
+  return template
+    .replace("{emotion_word}", emotionWord)
+    .replace("{place}", place);
+}
+
+// Apply late-night speech drift - softer, more honest
+function applyLateNightDrift(response: string, isLateNight: boolean, moodIntensity: number): string {
+  if (!isLateNight || moodIntensity < 0.4) return response;
+  
+  // 20% chance to add softener
+  if (Math.random() < 0.2) {
+    const softener = LATE_NIGHT_SPEECH_MODIFIERS.softeners[
+      Math.floor(Math.random() * LATE_NIGHT_SPEECH_MODIFIERS.softeners.length)
+    ];
+    // Add softener at start or middle
+    if (Math.random() > 0.5 && !response.startsWith("...")) {
+      return `${softener.charAt(0).toUpperCase() + softener.slice(1)}... ${response.charAt(0).toLowerCase() + response.slice(1)}`;
+    }
+  }
+  
+  // 15% chance to add honest prefix (high intensity only)
+  if (moodIntensity > 0.6 && Math.random() < 0.15) {
+    const honestPrefix = LATE_NIGHT_SPEECH_MODIFIERS.honestPrefixes[
+      Math.floor(Math.random() * LATE_NIGHT_SPEECH_MODIFIERS.honestPrefixes.length)
+    ];
+    return `${honestPrefix} ${response.charAt(0).toLowerCase() + response.slice(1)}`;
+  }
+  
+  return response;
+}
+
+// Master speech processing function
+function processSpeechMechanics(
+  response: string,
+  detectedEmotion: EmotionalTag,
+  currentMood: RuntimeMood,
+  messageCount: number,
+  moodIntensity: number,
+  isLateNight: boolean
+): string {
+  let processed = response;
+  
+  // Step 1: Occasionally make response indirect (speak through city/objects)
+  if (Math.random() < 0.15) {
+    processed = makeIndirect(processed, detectedEmotion);
+  }
+  
+  // Step 2: Apply speech rhythm
+  const rhythm = selectSpeechRhythm(currentMood, messageCount, isLateNight);
+  processed = applySpeechRhythm(processed, rhythm);
+  
+  // Step 3: Apply late-night drift
+  processed = applyLateNightDrift(processed, isLateNight, moodIntensity);
+  
+  return processed;
 }
 
 function getTimeOfDay(): TimeOfDay {
@@ -1522,6 +1731,20 @@ export function generateResponse(
       response = residueResponse;
     }
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SPEECH & CONVERSATION MECHANICS - Natural speech processing
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Bay Bela speaks rhythmically - pauses, fragments, trails off, uses city/objects.
+  // This makes him sound like a real man after midnight, not generated dialogue.
+  response = processSpeechMechanics(
+    response,
+    detectedEmotion,
+    newMood,
+    state.messageCount,
+    newIntensity,
+    isLateNightDeep
+  );
 
   return {
     response,
