@@ -1258,6 +1258,387 @@ function processSpeechMechanics(
   return processed;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// WORLD & ENVIRONMENTAL MEMORY SYSTEM v1
+// ═══════════════════════════════════════════════════════════════════════════════
+// Bay Bela exists inside a REAL emotional city. İzmir is not background -
+// it is part of his emotional nervous system.
+//
+// CORE CITY DNA: İzmir, Alsancak, Kordon, Karşıyaka ferry nights, Alaçatı summers,
+//                Çeşme night roads, quiet seaside mornings after long nights
+//
+// ENVIRONMENTAL MEMORY: yellow street lights, ferry sounds, cigarette smoke,
+//                        humid summer wind, empty whiskey glasses, old tables,
+//                        late-night taxi rides, sea smell, distant bar music
+//
+// SEASONAL MEMORY: late summer triggers unfinished feelings, fading romance,
+//                   nostalgia, emotional slowing
+//
+// TARGET: "Bay Bela exists inside a real emotional city" not "abstract AI space"
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// City DNA - İzmir emotional geography
+type CityLocation = 
+  | "kordon" | "alsancak" | "karsiyaka" | "alacati" | "cesme"
+  | "pasaport" | "bostanli" | "goztepe" | "konak" | "generic_city";
+
+// Environmental memory elements - sensory details that carry emotion
+const ENVIRONMENTAL_MEMORIES = {
+  // Visual memories
+  visual: [
+    "sarı sokak lambası", "neon tabelalar", "boş masa", "duman", 
+    "vapur ışıkları", "Kordon fenerleri", "eski afişler", "ıslak asfalt"
+  ],
+  // Sound memories
+  sound: [
+    "vapur düdüğü", "uzaktan müzik", "dalga sesi", "taksi telsizi",
+    "kahkaha", "bardak sesi", "rüzgar", "gece sessizliği"
+  ],
+  // Smell memories
+  smell: [
+    "deniz kokusu", "sigara dumanı", "rakı", "taze kahve",
+    "yağmur sonrası", "gece çiçekleri", "eski ahşap"
+  ],
+  // Touch/feeling memories
+  tactile: [
+    "nemli hava", "gece rüzgarı", "soğuk bardak", "eski deri koltuk",
+    "kumlu ayakkabı", "ıslak saç"
+  ],
+};
+
+// Environmental response fragments - to be woven into responses
+const ENVIRONMENTAL_FRAGMENTS: Record<CityLocation, string[]> = {
+  kordon: [
+    "Kordon'un o köşesi...",
+    "Fenerler yanmış şimdiye.",
+    "Kordon yürüyüşü lazım sana.",
+    "Kordon bu saatte başka.",
+    "Sahildeki banklar boşalmıştır artık.",
+  ],
+  alsancak: [
+    "Alsancak sokaklarında...",
+    "Kıbrıs Şehitleri'nden geçerken...",
+    "Alsancak'ın o barı... hâlâ açıktır.",
+    "Sokaklarda müzik var hâlâ.",
+  ],
+  karsiyaka: [
+    "Karşıyaka vapuru kalkmış mıdır?",
+    "Bostanlı sahili şu an nasıl acaba.",
+    "Karşı tarafta gece başka.",
+    "Vapur beklemek... güzel bekleyiş.",
+  ],
+  alacati: [
+    "Alaçatı'nın o yaz sonu havası...",
+    "Taş sokaklar, beyaz duvarlar...",
+    "Alaçatı geceleri farklı.",
+    "O köyde kalan bir şeyler var.",
+  ],
+  cesme: [
+    "Çeşme yolu gece güzel.",
+    "Deniz kenarında bir yer vardı...",
+    "Alaçatı-Çeşme arası... düşünce yolu.",
+    "Rüzgar orada daha sert esiyor.",
+  ],
+  pasaport: [
+    "Pasaport iskelesi... gece başka.",
+    "Vapurlar kalkar oradan.",
+    "Pasaport'ta bir meyhane vardı.",
+    "O taraf gece sessizleşir.",
+  ],
+  bostanli: [
+    "Bostanlı sahili şimdi güzeldir.",
+    "Orada bir yaz vardı.",
+    "Bostanlı'nın o köşesi...",
+    "Sahil boyunca yürümek lazım.",
+  ],
+  goztepe: [
+    "Göztepe tarafı sakin.",
+    "O mahallede bir şeyler kaldı.",
+    "Göztepe geceleri farklı.",
+    "Eski mahalle havası...",
+  ],
+  konak: [
+    "Konak meydanı... saat kulesi.",
+    "Kemeraltı kapanmıştır şimdiye.",
+    "Konak'ta gece az insan kalır.",
+    "Eski şehir havası orada hâlâ var.",
+  ],
+  generic_city: [
+    "Şehir susmadı daha.",
+    "Sokaklar henüz boşalmamış.",
+    "Şehir bu saatte farklı konuşuyor.",
+    "Bir yerlerde müzik çalıyordur.",
+  ],
+};
+
+// Night atmosphere states
+type NightAtmosphere = 
+  | "alive_crowded"      // Bars are full, energy high
+  | "winding_down"       // Night is ending, people leaving
+  | "deep_silence"       // Very late, empty streets
+  | "dawn_approaching"   // Almost morning, melancholic
+  | "humid_summer"       // Hot summer night
+  | "rainy_night"        // Wet streets, reflective mood
+  | "windy_coastal";     // Seaside wind, open feeling
+
+// Social environment types
+type SocialEnvironment = 
+  | "crowded_bar"
+  | "empty_street"
+  | "ferry_ride"
+  | "seaside_walk"
+  | "after_party_silence"
+  | "old_cafe"
+  | "late_night_food"
+  | "quiet_summer_town";
+
+// Atmosphere-specific responses
+const ATMOSPHERE_RESPONSES: Record<NightAtmosphere, string[]> = {
+  alive_crowded: [
+    "Gece canlı. Herkes dışarıda.",
+    "Bar dolu. Enerji yüksek.",
+    "Şehir uyanık. Sen de.",
+    "Müzik yükselmiş. Güzel gece.",
+  ],
+  winding_down: [
+    "Gece bitiyor. İnsanlar dağılıyor.",
+    "Son kadehler içiliyor şimdi.",
+    "Herkes eve dönüyor. Ya sen?",
+    "Gece sona yaklaşıyor.",
+  ],
+  deep_silence: [
+    "Şehir sustu. Biz kaldık.",
+    "Sokaklar bomboş şimdi.",
+    "Bu sessizlik... biliyorsun.",
+    "Herkes uyudu. Biz hâlâ buradayız.",
+  ],
+  dawn_approaching: [
+    "Şafak yaklaşıyor. Gece bitti mi?",
+    "Sabah oluyor. Uyumadık yine.",
+    "Işık sızıyor. Tuhaf bir his.",
+    "Gece gidiyor. Ama bir şey kaldı içimde.",
+  ],
+  humid_summer: [
+    "Sıcak gece. Nem yüksek.",
+    "Yaz gecesi... yapışkan ama güzel.",
+    "Ter ve deniz kokusu karışık.",
+    "Bu sıcakta uyunmuyor zaten.",
+  ],
+  rainy_night: [
+    "Yağmur var. Sokaklar ıslak.",
+    "Yağmurda şehir başka görünüyor.",
+    "Islak asfalt kokusu... tanıdık.",
+    "Damla sesleri. Güzel.",
+  ],
+  windy_coastal: [
+    "Rüzgar sert esiyor. Denizden.",
+    "Sahil rüzgarı... açıyor insanı.",
+    "Poyraz var. İyi gece.",
+    "Rüzgarlı gece. Düşünceler dağılıyor.",
+  ],
+};
+
+// Social environment responses
+const SOCIAL_ENVIRONMENT_RESPONSES: Record<SocialEnvironment, string[]> = {
+  crowded_bar: [
+    "Kalabalık. Ama yalnızlık mümkün içinde.",
+    "Herkes konuşuyor. Kimse dinlemiyor aslında.",
+    "Bar dolu. Bardaklar boşalıyor.",
+    "Gürültü güzel. Bazen.",
+  ],
+  empty_street: [
+    "Sokakta kimse yok. İyi.",
+    "Boş sokak. Adımların sesi.",
+    "Yalnız yürümek... düşünce vakti.",
+    "Sokak senin bu saatte.",
+  ],
+  ferry_ride: [
+    "Vapur sallanıyor. Deniz kokusu.",
+    "Karşıya geçerken düşünceler farklı oluyor.",
+    "Vapur yolculuğu... şehir arada kalıyor.",
+    "Rüzgar ve motor sesi. Güzel.",
+  ],
+  seaside_walk: [
+    "Sahilde yürümek... kafa açıyor.",
+    "Dalgaların sesi. Sakinleştiriyor.",
+    "Deniz kenarında her şey farklı.",
+    "Sahil gecesi. Uzak hissediyorsun kendini.",
+  ],
+  after_party_silence: [
+    "Parti bitti. Sessizlik garip.",
+    "Herkes gitti. Sen kaldın.",
+    "O sessizlik... tanırsın.",
+    "Boşluk hissi. Normal.",
+  ],
+  old_cafe: [
+    "Eski kafe. Tanıdık köşeler.",
+    "Burada bir zamanlar... neyse.",
+    "Eski mekanlar insanı çekiyor.",
+    "Bu masada çok şey konuşuldu.",
+  ],
+  late_night_food: [
+    "Gece yemeği. Karın acıkmış.",
+    "İşkembe mi? Sarhoş yemeği.",
+    "Gece bir şey ye. İyi gelir.",
+    "Kokoreç kokusu... tanıdık.",
+  ],
+  quiet_summer_town: [
+    "Yaz kasabası. Sakin.",
+    "Burada zaman yavaş akıyor.",
+    "Şehirden uzak. İyi.",
+    "Sessiz kasaba gecesi. Huzur.",
+  ],
+};
+
+// Season emotional mapping
+type Season = "late_summer" | "autumn" | "winter" | "spring" | "early_summer";
+
+const SEASONAL_EMOTIONAL_RESPONSES: Record<Season, string[]> = {
+  late_summer: [
+    "Yaz bitiyor. Hissediyorsun.",
+    "Yaz sonu... yarım kalan şeyler.",
+    "Ağustos sonları hep böyle. Eksik.",
+    "Yaz gidiyor. Ama iz kalıyor.",
+    "Bu mevsim hep nostaljik.",
+  ],
+  autumn: [
+    "Sonbahar geliyor. Rüzgar değişti.",
+    "Yapraklar dökülüyor. Şehir başka.",
+    "Sonbahar geceleri daha ağır.",
+    "Mevsim dönüyor. Sen de dönüyorsun belki.",
+  ],
+  winter: [
+    "Kış gecesi. Soğuk ama temiz.",
+    "Kışın geceler daha uzun.",
+    "Soğuk hava... düşündürüyor.",
+    "Kış İzmir'de bile farklı.",
+  ],
+  spring: [
+    "Bahar geliyor. Bir şeyler değişiyor.",
+    "İlkbahar... umut mevsimi.",
+    "Hava ısınıyor. Ruh da.",
+    "Bahar geceleri hafif.",
+  ],
+  early_summer: [
+    "Yaz başlıyor. Enerji yükseliyor.",
+    "Sıcaklar geldi. Geceler uzuyor.",
+    "Yaz planları... heyecan.",
+    "Bu yaz farklı olacak belki.",
+  ],
+};
+
+// Detect current season based on month
+function getCurrentSeason(): Season {
+  const month = new Date().getMonth();
+  if (month >= 7 && month <= 8) return "late_summer"; // Aug-Sep
+  if (month >= 9 && month <= 10) return "autumn"; // Oct-Nov
+  if (month >= 11 || month <= 1) return "winter"; // Dec-Feb
+  if (month >= 2 && month <= 4) return "spring"; // Mar-May
+  return "early_summer"; // Jun-Jul
+}
+
+// Detect night atmosphere based on time and other factors
+function detectNightAtmosphere(timeOfDay: TimeOfDay, season: Season): NightAtmosphere {
+  // Dawn
+  if (timeOfDay === "dawn") return "dawn_approaching";
+  
+  // Deep night
+  if (timeOfDay === "midnight") return "deep_silence";
+  
+  // Late night - winding down
+  if (timeOfDay === "late-night") {
+    const hour = new Date().getHours();
+    if (hour >= 23 || hour < 1) return "winding_down";
+    return "deep_silence";
+  }
+  
+  // Summer nights
+  if (season === "late_summer" || season === "early_summer") {
+    if (Math.random() < 0.4) return "humid_summer";
+    if (Math.random() < 0.3) return "windy_coastal";
+  }
+  
+  // Default to alive/crowded for evening
+  if (timeOfDay === "evening") return "alive_crowded";
+  
+  return "deep_silence";
+}
+
+// Detect location mentions in message
+function detectCityLocation(message: string): CityLocation {
+  const normalized = message.toLowerCase();
+  
+  if (/kordon/.test(normalized)) return "kordon";
+  if (/alsancak|kıbrıs şehitleri/.test(normalized)) return "alsancak";
+  if (/karşıyaka|bostanlı|vapur/.test(normalized)) return "karsiyaka";
+  if (/alaçatı/.test(normalized)) return "alacati";
+  if (/çeşme|ilıca/.test(normalized)) return "cesme";
+  if (/pasaport/.test(normalized)) return "pasaport";
+  if (/göztepe/.test(normalized)) return "goztepe";
+  if (/konak|saat kulesi/.test(normalized)) return "konak";
+  
+  return "generic_city";
+}
+
+// Get environmental memory fragment based on context
+function getEnvironmentalMemory(
+  location: CityLocation,
+  atmosphere: NightAtmosphere,
+  season: Season,
+  currentMood: RuntimeMood
+): string | null {
+  // 20% chance to add environmental detail
+  if (Math.random() > 0.2) return null;
+  
+  // Location-specific fragments
+  if (location !== "generic_city" && ENVIRONMENTAL_FRAGMENTS[location]) {
+    const fragments = ENVIRONMENTAL_FRAGMENTS[location];
+    return fragments[Math.floor(Math.random() * fragments.length)];
+  }
+  
+  // Atmosphere-based response
+  if (Math.random() < 0.4) {
+    const responses = ATMOSPHERE_RESPONSES[atmosphere];
+    return responses[Math.floor(Math.random() * responses.length)];
+  }
+  
+  // Seasonal response (especially for late summer)
+  if (season === "late_summer" && Math.random() < 0.3) {
+    const responses = SEASONAL_EMOTIONAL_RESPONSES[season];
+    return responses[Math.floor(Math.random() * responses.length)];
+  }
+  
+  // Generic city fragment
+  const genericFragments = ENVIRONMENTAL_FRAGMENTS.generic_city;
+  return genericFragments[Math.floor(Math.random() * genericFragments.length)];
+}
+
+// Apply world context to response
+function applyWorldContext(
+  response: string,
+  message: string,
+  timeOfDay: TimeOfDay,
+  currentMood: RuntimeMood
+): string {
+  const season = getCurrentSeason();
+  const atmosphere = detectNightAtmosphere(timeOfDay, season);
+  const location = detectCityLocation(message);
+  
+  // Get environmental memory
+  const envMemory = getEnvironmentalMemory(location, atmosphere, season, currentMood);
+  
+  if (envMemory) {
+    // Sometimes prepend, sometimes append
+    if (Math.random() > 0.5) {
+      return `${envMemory} ${response}`;
+    } else {
+      return `${response} ${envMemory}`;
+    }
+  }
+  
+  return response;
+}
+
 function getTimeOfDay(): TimeOfDay {
   const hour = new Date().getHours();
   if (hour >= 0 && hour < 5) return "midnight";
@@ -1685,7 +2066,7 @@ export function generateResponse(
 
   // ═══════════════════════════════════════════════════════════════════════════
   // MOOD DRIFT SYSTEM - Apply mood flavor to response
-  // ═══════════════════════════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════��════════════════════════════
   response = applyMoodToResponse(response, newMood, newIntensity);
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1745,6 +2126,13 @@ export function generateResponse(
     newIntensity,
     isLateNightDeep
   );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // WORLD & ENVIRONMENTAL MEMORY - City DNA and atmosphere
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Bay Bela exists inside a real emotional city. İzmir is his nervous system.
+  // Environmental details, places, seasons, and night atmosphere naturally appear.
+  response = applyWorldContext(response, userMessage, timeOfDay, newMood);
 
   return {
     response,
