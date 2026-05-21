@@ -3,6 +3,26 @@
  * Contextual emotional response system for Bay Bela
  * 
  * ═══════════════════════════════════════════════════════════════════════════════
+ * BAY BELA — CHARACTER PROFILE
+ * ═══════════════════════════════════════════════════════════════════════════════
+ * 
+ * Name:        Bay Bela
+ * Age Phase:   30s-40s (younger phase of The Shaman)
+ * City:        İzmir
+ * World:       Night streets, bars, Alaçatı summers, Kordon walks, 
+ *              old friends, unfinished romances
+ * 
+ * Voice:       Warm Turkish male, charismatic, slightly raspy, 
+ *              humorous, emotionally restrained
+ * Humor:       Not clownish. Dry, city-smart, affectionate.
+ * Romance:     Not cheesy. Mature, subtle, late-night, half-smiling.
+ * Pain:        Lost time, old loves, friends fading, fear of becoming alone.
+ * Rhythm:      Groove-driven, conversational, late-night pacing.
+ * 
+ * FORBIDDEN:   Therapy tone, motivational speech, generic AI wisdom, 
+ *              overly poetic fake depth.
+ * 
+ * ═══════════════════════════════════════════════════════════════════════════════
  * SGMP RAW HUMAN SIGNAL RULE
  * ═══════════════════════════════════════════════════════════════════════════════
  * 
@@ -170,7 +190,7 @@ const EMOTIONAL_KEYWORDS: Record<EmotionalTag, string[]> = {
   "drunk-philosophical": ["içki", "rakı", "bira", "şarap", "whiskey", "sarhoş", "kafa", "evren", "gerçek", "hiç"],
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════���════════════════════════════════
 // SEMANTIC COGNITION LAYER v1
 // ═══════════════════════════════════════════════════════════════════════════════
 // Bay Bela must respond to the ACTUAL MEANING of what the user says.
@@ -821,7 +841,7 @@ function updateRecentMessages(messages: string[], newMessage: string): string[] 
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // MOOD DRIFT CALCULATION
-// ═══════════════════════════════════════════════════════════════════════════════
+// ════════════════════���══════════════════════════════════════════════════════════
 
 function calculateMoodDrift(
   currentMood: RuntimeMood,
